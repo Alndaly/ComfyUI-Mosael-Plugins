@@ -1,0 +1,63 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {"ckpt_name": "your_model.safetensors"},
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {"text": "a photo of a cat, high quality", "clip": ["1", 1]},
+    "_meta": {"title": "Positive Prompt"}
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {"text": "ugly, blurry, low quality", "clip": ["1", 1]},
+    "_meta": {"title": "Negative Prompt"}
+  },
+  "4": {
+    "class_type": "Optional Load Image",
+    "inputs": {"image": "none", "allow_none": true},
+    "_meta": {"title": "Optional Load Image (set to 'none' for txt2img, or pick/upload an image for img2img)"}
+  },
+  "5": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {"width": 512, "height": 512, "batch_size": 1},
+    "_meta": {"title": "Empty Latent (txt2img branch)"}
+  },
+  "6": {
+    "class_type": "VAEEncode",
+    "inputs": {"pixels": ["4", 0], "vae": ["1", 2]},
+    "_meta": {"title": "VAE Encode (img2img branch — skipped when no image)"}
+  },
+  "7": {
+    "class_type": "Lazy Latent Switch",
+    "inputs": {"condition": ["4", 1], "latent_true": ["6", 0], "latent_false": ["5", 0]},
+    "_meta": {"title": "Lazy Latent Switch (auto: image ? img2img : txt2img)"}
+  },
+  "8": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["2", 0],
+      "negative": ["3", 0],
+      "latent_image": ["7", 0],
+      "seed": 42,
+      "steps": 20,
+      "cfg": 7.0,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.7
+    },
+    "_meta": {"title": "KSampler"}
+  },
+  "9": {
+    "class_type": "VAEDecode",
+    "inputs": {"samples": ["8", 0], "vae": ["1", 2]},
+    "_meta": {"title": "VAE Decode"}
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": {"filename_prefix": "optional_inputs", "images": ["9", 0]},
+    "_meta": {"title": "Save Image"}
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {"ckpt_name": "your_model.safetensors"},
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "2": {
+    "class_type": "Optional Image",
+    "inputs": {},
+    "_meta": {"title": "Optional Image (leave unconnected, or connect any IMAGE source)"}
+  },
+  "3": {
+    "class_type": "Has Image",
+    "inputs": {"image": ["2", 0]},
+    "_meta": {"title": "Has Image"}
+  },
+  "4": {
+    "class_type": "ImageScale",
+    "inputs": {"upscale_method": "nearest-exact", "width": 64, "height": 64, "crop": "disabled", "image": ["2", 0]},
+    "_meta": {"title": "ImageScale (process branch — only runs when an image exists)"}
+  },
+  "5": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {"width": 64, "height": 64, "batch_size": 1},
+    "_meta": {"title": "Empty Latent"}
+  },
+  "6": {
+    "class_type": "VAEEncode",
+    "inputs": {"pixels": ["4", 0], "vae": ["1", 2]},
+    "_meta": {"title": "VAE Encode"}
+  },
+  "7": {
+    "class_type": "Lazy Latent Switch",
+    "inputs": {"condition": ["3", 0], "latent_true": ["6", 0], "latent_false": ["5", 0]},
+    "_meta": {"title": "Lazy Latent Switch"}
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {"samples": ["7", 0], "vae": ["1", 2]},
+    "_meta": {"title": "VAE Decode"}
+  },
+  "9": {
+    "class_type": "PreviewImage",
+    "inputs": {"images": ["8", 0]},
+    "_meta": {"title": "Preview Image"}
+  }
+}
