@@ -11,6 +11,7 @@ import pytest
 SWITCHES = [
     ("Lazy Image Switch", "image_true", "image_false", "IMAGE"),
     ("Lazy Latent Switch", "latent_true", "latent_false", "LATENT"),
+    ("Lazy Video Switch", "video_true", "video_false", "VIDEO"),
     ("Lazy Any Switch", "value_true", "value_false", "*"),
 ]
 

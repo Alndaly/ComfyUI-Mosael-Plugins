@@ -37,10 +37,13 @@ schedules the unselected branch.
 | Node | Purpose |
 |---|---|
 | **Optional Load Image** | Load an image, or explicitly select `none`. Outputs `image` + `mask` (alpha-derived, like the stock Load Image node; both may be `None`) + `has_image`. |
+| **Optional Load Video** | Load a video (same lazy `VIDEO` object as the stock Load Video node), or select `none`. Outputs `video` (may be `None`) + `has_video`. |
+| **Optional Video Preview** | Preview a video in the UI. Its `video` input is lazy and only pulled when `condition` is True — wire `has_video` in, and the video branch is skipped entirely when no video exists. |
 | **Optional Image** | Pass an optional IMAGE connection through, reporting `has_image`. |
 | **Has Image** | `IMAGE → BOOLEAN`: is an image present? Decided by identity, never by pixel contents. |
 | **Lazy Image Switch** | Pick `image_true` / `image_false` by `condition`; only the selected branch executes. |
 | **Lazy Latent Switch** | Same for LATENT (img2img vs txt2img latents). Preserves the full latent dict. |
+| **Lazy Video Switch** | Same for VIDEO (video-to-video vs generated video). |
 | **Lazy Any Switch** | Same for any type via the `*` wildcard. No type validation on branches (see below). |
 
 ### Missing-value semantics

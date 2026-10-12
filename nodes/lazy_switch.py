@@ -77,6 +77,20 @@ class LazyLatentSwitch(_LazySwitchBase):
     )
 
 
+class LazyVideoSwitch(_LazySwitchBase):
+    SWITCH_TYPE = "VIDEO"
+    TRUE_INPUT = "video_true"
+    FALSE_INPUT = "video_false"
+
+    RETURN_TYPES = ("VIDEO",)
+    RETURN_NAMES = ("video",)
+    FUNCTION = "switch"
+    DESCRIPTION = (
+        "Select between two VIDEO inputs. Only the selected branch is "
+        "executed; the other branch is never evaluated thanks to lazy inputs."
+    )
+
+
 class LazyAnySwitch(_LazySwitchBase):
     SWITCH_TYPE = "*"
     TRUE_INPUT = "value_true"

@@ -26,6 +26,7 @@ How lazy execution is proven (not merely assumed):
 
 import json
 import os
+from pathlib import Path
 
 import pytest
 
@@ -184,3 +185,94 @@ def test_lazy_latent_switch_skips_unselected_branch(client, pack_installed):
     }
     ok, detail = client.run(workflow)
     assert ok, "unselected LATENT branch was executed: {}".format(detail)
+
+
+# --- optional video nodes ----------------------------------------------------
+
+TINY_MP4_PATH = Path(__file__).parent / "tiny_video.mp4"
+
+
+def _upload_video(client):
+    return client.upload_image(
+        content=TINY_MP4_PATH.read_bytes(), name="oi_test_video.mp4"
+    )
+
+
+def _video_workflow(client, selection):
+    return {
+        "1": {"class_type": "Optional Load Video",
+              "inputs": {"video": selection, "allow_none": True}},
+        "2": {"class_type": "Optional Video Preview",
+              "inputs": {"condition": ["1", 1], "video": ["1", 0]}},
+    }
+
+
+def test_optional_video_none(client):
+    # has_video = False -> the preview never pulls the video output; the
+    # workflow still completes with the preview node as its only output node.
+    ok, detail = client.run(_video_workflow(client, "none"))
+    assert ok, "video-less run failed: {}".format(detail)
+
+
+def test_optional_video_with_file(client):
+    name = _upload_video(client)
+    ok, detail = client.run(_video_workflow(client, name))
+    assert ok, "video run failed: {}".format(detail)
+
+
+def test_optional_video_invalid_file_rejected(client):
+    _, error = client.queue(_video_workflow(client, "ghost_video.mp4"))
+    assert error is not None
+    assert "ghost_video.mp4" in json.dumps(error)
+
+
+def test_optional_video_preview_skips_branch_without_video(client):
+    # VideoSlice would crash on a None video; the lazy preview must never
+    # pull the video branch when has_video is False.  A successful run
+    # proves VideoSlice was not executed.
+    workflow = {
+        "1": {"class_type": "Optional Load Video",
+              "inputs": {"video": "none", "allow_none": True}},
+        "2": {"class_type": "Video Slice",
+              "inputs": {"video": ["1", 0], "start_time": 0.0, "duration": 0.0,
+                         "strict_duration": False}},
+        "3": {"class_type": "Optional Video Preview",
+              "inputs": {"condition": ["1", 1], "video": ["2", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert ok, "video branch was executed despite has_video=False: {}".format(detail)
+
+
+def test_lazy_video_switch_skips_unselected_branch(client, pack_installed):
+    if not pack_installed:
+        pytest.skip("lazy_proof_pack not installed on the server")
+    # Constant video from a file on the true branch, failing node on false.
+    name = _upload_video(client)
+    workflow = {
+        "1": {"class_type": "Optional Load Video",
+              "inputs": {"video": name, "allow_none": True}},
+        "2": {"class_type": "OI Test Fail Video", "inputs": {}},
+        "3": {"class_type": "Lazy Video Switch",
+              "inputs": {"condition": True, "video_true": ["1", 0], "video_false": ["2", 0]}},
+        "4": {"class_type": "Optional Video Preview",
+              "inputs": {"condition": True, "video": ["3", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert ok, "unselected VIDEO branch was executed: {}".format(detail)
+
+
+def test_lazy_video_switch_executes_selected_branch(client, pack_installed):
+    if not pack_installed:
+        pytest.skip("lazy_proof_pack not installed on the server")
+    workflow = {
+        "1": {"class_type": "Optional Load Video",
+              "inputs": {"video": "none", "allow_none": True}},
+        "2": {"class_type": "OI Test Fail Video", "inputs": {}},
+        "3": {"class_type": "Lazy Video Switch",
+              "inputs": {"condition": False, "video_true": ["1", 0], "video_false": ["2", 0]}},
+        "4": {"class_type": "Optional Video Preview",
+              "inputs": {"condition": True, "video": ["3", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert not ok
+    assert "OI_TEST_FAIL" in detail

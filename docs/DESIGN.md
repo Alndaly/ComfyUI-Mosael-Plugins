@@ -74,10 +74,12 @@ already-evaluated inputs out of the requested list — see section 4.)
 | Class | Node id | Category | Data type |
 |---|---|---|---|
 | `OptionalImage` | `Optional Image` | Optional Inputs/Image | IMAGE |
-| `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE, MASK |
+| `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE, MASK || `OptionalLoadVideo` | `Optional Load Video` | Optional Inputs/Video | VIDEO |
+| `OptionalVideoPreview` | `Optional Video Preview` | Optional Inputs/Video | VIDEO |
 | `HasImage` | `Has Image` | Optional Inputs/Logic | IMAGE → BOOLEAN |
 | `LazyImageSwitch` | `Lazy Image Switch` | Optional Inputs/Logic | IMAGE |
 | `LazyLatentSwitch` | `Lazy Latent Switch` | Optional Inputs/Logic | LATENT |
+| `LazyVideoSwitch` | `Lazy Video Switch` | Optional Inputs/Logic | VIDEO |
 | `LazyAnySwitch` | `Lazy Any Switch` | Optional Inputs/Logic | `*` |
 
 All nodes use the **legacy (V1) custom node API** (`INPUT_TYPES` /
@@ -170,6 +172,31 @@ conditionally blocking output nodes, per its own docstring in
 Everything above is server-side. The combo value `"none"` is a plain string,
 so `/prompt` submissions work with the image selected, with `"none"`, and with
 a programmatically updated filename. No frontend state is involved.
+
+## 5b. Optional video nodes
+
+Modern ComfyUI ships a `VIDEO` type (`io.Video`, io_type `"VIDEO"`) whose
+values are lazy, file-backed `Input.Video` objects (`comfy_extras/
+nodes_video.py`). The plugin mirrors the image design for it:
+
+- **`OptionalLoadVideo`** offers `["none"] + video files` with the native
+  `{"video_upload": True}` widget and delegates to the core `LoadVideo.
+  execute()`, returning the exact same lazy video object plus the stock
+  upload-preview UI. `IS_CHANGED` uses the file mtime — like the core
+  node's `fingerprint_inputs` — instead of hashing large videos. The
+  `comfy_extras.nodes_video` import is deferred to the "a video is
+  selected" path, so the `none` path (and its unit tests) stays free of
+  av/torch imports.
+- **`OptionalVideoPreview`** is an output node with a lazy optional `video`
+  input and a required `condition` BOOLEAN. `check_lazy_status` requests
+  the video only when `condition` is True, so wiring `has_video` into
+  `condition` guarantees the entire video branch (including intermediate
+  processing nodes that would crash on `None`) is skipped when no video
+  exists. When a video is present it is encoded to a temp MP4 via the
+  core `save_video_preview` helper and emitted as `PreviewVideo` UI,
+  passing the video through unchanged.
+- **`LazyVideoSwitch`** is the typed VIDEO sibling of the image/latent
+  switches; identical protocol.
 
 ## 6. Validation analysis
 

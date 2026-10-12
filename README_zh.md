@@ -31,10 +31,13 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 | 节点 | 用途 |
 |---|---|
 | **Optional Load Image** | 加载图片，或显式选择 `none`。输出 `image` + `mask`（由 alpha 通道推导，与官方 Load Image 节点一致；均可为 `None`）+ `has_image`。 |
+| **Optional Load Video** | 加载视频（与官方 Load Video 节点相同的惰性 `VIDEO` 对象），或选择 `none`。输出 `video`（可为 `None`）+ `has_video`。 |
+| **Optional Video Preview** | 在界面中预览视频。其 `video` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_video` 后，无视频时整条视频分支都不会执行。 |
 | **Optional Image** | 透传一个可选的 IMAGE 连接，并报告 `has_image`。 |
 | **Has Image** | `IMAGE → BOOLEAN`：图像是否存在？按值本身判断，绝不看像素内容。 |
 | **Lazy Image Switch** | 按 `condition` 选择 `image_true` / `image_false`；只执行选中的分支。 |
 | **Lazy Latent Switch** | LATENT 版本（图生图 vs 文生图 latent）。完整保留 latent 字典。 |
+| **Lazy Video Switch** | VIDEO 版本（视频生视频 vs 生成视频）。 |
 | **Lazy Any Switch** | 通过 `*` 通配符支持任意类型。分支不做类型校验（见下文）。 |
 
 ### 缺失值语义

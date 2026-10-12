@@ -21,6 +21,7 @@ import pytest
 PLUGIN_DIR = Path(__file__).resolve().parents[1]
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
+VIDEO_EXTENSIONS = {".mp4", ".mkv", ".webm", ".mov", ".avi"}
 
 
 class StubFolderPaths(types.ModuleType):
@@ -34,9 +35,11 @@ class StubFolderPaths(types.ModuleType):
         return self.input_dir
 
     def filter_files_content_types(self, files, content_types):
-        if "image" not in content_types:
-            return list(files)
-        return [f for f in files if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS]
+        if "image" in content_types:
+            return [f for f in files if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS]
+        if "video" in content_types:
+            return [f for f in files if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS]
+        return list(files)
 
     def get_annotated_filepath(self, name, default_dir=None):
         base = os.path.realpath(default_dir or self.input_dir)
@@ -66,6 +69,45 @@ class StubLoadImage:
         return StubLoadImage.result
 
 
+class StubNodeOutput:
+    """Minimal stand-in for comfy_api io.NodeOutput."""
+
+    def __init__(self, result, ui=None):
+        self.result = result
+        self.ui = ui
+
+
+class StubCoreLoadVideo:
+    """Stand-in for comfy_extras.nodes_video.LoadVideo."""
+
+    # class-level knobs
+    video = object()
+    preview_ui = {"images": [{"filename": "x.mp4"}], "animated": (True,)}
+    error = None
+
+    @classmethod
+    def execute(cls, file):
+        if cls.error is not None:
+            raise cls.error
+        return StubNodeOutput((cls.video,), cls.preview_ui)
+
+
+def stub_save_video_preview(video):
+    return StubNodeOutput((), {"images": [{"filename": "preview.mp4"}], "animated": (True,)}).ui
+
+
+def _install_video_stub():
+    if "comfy_extras" in sys.modules and "comfy_extras.nodes_video" in sys.modules:
+        return
+    parent = sys.modules.get("comfy_extras") or types.ModuleType("comfy_extras")
+    stub = types.ModuleType("comfy_extras.nodes_video")
+    stub.LoadVideo = StubCoreLoadVideo
+    stub.save_video_preview = stub_save_video_preview
+    sys.modules["comfy_extras"] = parent
+    sys.modules["comfy_extras.nodes_video"] = stub
+    parent.nodes_video = stub
+
+
 def _install_stubs():
     if "folder_paths" not in sys.modules:
         sys.modules["folder_paths"] = StubFolderPaths()
@@ -73,6 +115,7 @@ def _install_stubs():
         stub = types.ModuleType("nodes")
         stub.LoadImage = StubLoadImage
         sys.modules["nodes"] = stub
+    _install_video_stub()
 
 
 def _load_plugin():
@@ -101,6 +144,9 @@ def input_dir(tmp_path):
     sys.modules["folder_paths"].input_dir = str(directory)
     StubLoadImage.result = (object(), object())
     StubLoadImage.error = None
+    StubCoreLoadVideo.video = object()
+    StubCoreLoadVideo.preview_ui = {"images": [{"filename": "x.mp4"}], "animated": (True,)}
+    StubCoreLoadVideo.error = None
     return directory
 
 
