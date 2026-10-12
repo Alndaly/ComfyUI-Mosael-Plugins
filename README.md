@@ -36,7 +36,7 @@ schedules the unselected branch.
 
 | Node | Purpose |
 |---|---|
-| **Optional Load Image** | Load an image, or explicitly select `none`. Outputs `image` (may be `None`) + `has_image`. |
+| **Optional Load Image** | Load an image, or explicitly select `none`. Outputs `image` + `mask` (alpha-derived, like the stock Load Image node; both may be `None`) + `has_image`. |
 | **Optional Image** | Pass an optional IMAGE connection through, reporting `has_image`. |
 | **Has Image** | `IMAGE → BOOLEAN`: is an image present? Decided by identity, never by pixel contents. |
 | **Lazy Image Switch** | Pick `image_true` / `image_false` by `condition`; only the selected branch executes. |
@@ -45,7 +45,7 @@ schedules the unselected branch.
 
 ### Missing-value semantics
 
-- Missing input → `image` output is Python `None`, `has_image` is `False`.
+- Missing input → `image` and `mask` outputs are Python `None`, `has_image` is `False`.
 - A valid tensor — **including an all-black or empty-batch image** — is
   present and is passed through unchanged (same object, no copy, batch /
   device / dtype preserved).

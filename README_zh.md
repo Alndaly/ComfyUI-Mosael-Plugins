@@ -30,7 +30,7 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 
 | 节点 | 用途 |
 |---|---|
-| **Optional Load Image** | 加载图片，或显式选择 `none`。输出 `image`（可能为 `None`）+ `has_image`。 |
+| **Optional Load Image** | 加载图片，或显式选择 `none`。输出 `image` + `mask`（由 alpha 通道推导，与官方 Load Image 节点一致；均可为 `None`）+ `has_image`。 |
 | **Optional Image** | 透传一个可选的 IMAGE 连接，并报告 `has_image`。 |
 | **Has Image** | `IMAGE → BOOLEAN`：图像是否存在？按值本身判断，绝不看像素内容。 |
 | **Lazy Image Switch** | 按 `condition` 选择 `image_true` / `image_false`；只执行选中的分支。 |
@@ -39,7 +39,7 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 
 ### 缺失值语义
 
-- 输入缺失 → `image` 输出为 Python `None`，`has_image` 为 `False`。
+- 输入缺失 → `image` 与 `mask` 输出均为 Python `None`，`has_image` 为 `False`。
 - 有效张量——**包括全黑图或空批次图**——视为存在，原样透传（同一对象、零拷贝，批次 /
   设备 / dtype 保持不变）。
 - 损坏或被删除的文件是**硬错误**，绝不会静默当作"缺失"。

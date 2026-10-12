@@ -32,13 +32,14 @@ class OptionalLoadImage:
     CATEGORY = "Optional Inputs/Image"
     DESCRIPTION = (
         "Load an image from the input directory, or explicitly select 'none'. "
-        "Outputs the image plus a has_image boolean. Selecting 'none' requires "
-        "no image file and yields a None image output (safe behind lazy "
-        "switches) with has_image = False."
+        "Outputs image, mask (alpha-derived, like the stock Load Image node) "
+        "and a has_image boolean. Selecting 'none' requires no image file and "
+        "yields None image/mask outputs (safe behind lazy switches) with "
+        "has_image = False."
     )
 
-    RETURN_TYPES = ("IMAGE", "BOOLEAN")
-    RETURN_NAMES = ("image", "has_image")
+    RETURN_TYPES = ("IMAGE", "MASK", "BOOLEAN")
+    RETURN_NAMES = ("image", "mask", "has_image")
     FUNCTION = "load_image"
 
     def load_image(self, image, allow_none):
@@ -49,7 +50,7 @@ class OptionalLoadImage:
                 raise ValueError(
                     "'none' is selected but allow_none is disabled on Optional Load Image"
                 )
-            return (None, False)
+            return (None, None, False)
 
         if not folder_paths.exists_annotated_filepath(image):
             # A file that existed at validation time may have been deleted
@@ -61,7 +62,10 @@ class OptionalLoadImage:
 
         try:
             # Delegate to the core loader for full format/EXIF/alpha support.
-            tensor, _mask = comfy_nodes.LoadImage().load_image(image)
+            # It returns (image, mask), where the mask is alpha-derived and is
+            # a zero tensor for images without an alpha channel — identical to
+            # the stock Load Image node.
+            tensor, mask = comfy_nodes.LoadImage().load_image(image)
         except FileNotFoundError:
             raise
         except Exception as e:
@@ -74,7 +78,7 @@ class OptionalLoadImage:
                 "Image loader returned no data for {!r}; refusing to treat a "
                 "failed load as a missing image".format(image)
             )
-        return (tensor, True)
+        return (tensor, mask, True)
 
     @classmethod
     def IS_CHANGED(cls, image, allow_none):

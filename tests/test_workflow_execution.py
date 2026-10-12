@@ -68,7 +68,7 @@ def build_workflow(client, image_selection):
         "6": {"class_type": "VAEEncode",
               "inputs": {"pixels": ["4", 0], "vae": ["1", 2]}},
         "7": {"class_type": "Lazy Latent Switch",
-              "inputs": {"condition": ["4", 1], "latent_true": ["6", 0], "latent_false": ["5", 0]}},
+              "inputs": {"condition": ["4", 2], "latent_true": ["6", 0], "latent_false": ["5", 0]}},
         "8": {"class_type": "KSampler",
               "inputs": {"model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0],
                          "latent_image": ["7", 0], "seed": 42, "steps": 1, "cfg": 1.0,

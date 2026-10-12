@@ -74,7 +74,7 @@ already-evaluated inputs out of the requested list — see section 4.)
 | Class | Node id | Category | Data type |
 |---|---|---|---|
 | `OptionalImage` | `Optional Image` | Optional Inputs/Image | IMAGE |
-| `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE |
+| `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE, MASK |
 | `HasImage` | `Has Image` | Optional Inputs/Logic | IMAGE → BOOLEAN |
 | `LazyImageSwitch` | `Lazy Image Switch` | Optional Inputs/Logic | IMAGE |
 | `LazyLatentSwitch` | `Lazy Latent Switch` | Optional Inputs/Logic | LATENT |
@@ -144,7 +144,10 @@ conditionally blocking output nodes, per its own docstring in
   native `{"image_upload": True}` option so the stock upload button and image
   preview appear without any frontend JavaScript; `allow_none` — BOOLEAN,
   default `True`.
-- **Outputs**: `(image, has_image)`.
+- **Outputs**: `(image, mask, has_image)`. The mask is the alpha-derived
+  tensor from the core loader (a zero tensor for images without alpha), same
+  as the stock `LoadImage` node; it is `None` together with `image` when
+  `none` is selected.
 - **Selection `"none"`** → `(None, False)` without touching the filesystem.
 - **Loading** delegates to the core `nodes.LoadImage().load_image()`, which
   inherits full core behavior: PNG/JPEG/WebP (including animated WebP),

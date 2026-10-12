@@ -31,7 +31,7 @@
   },
   "7": {
     "class_type": "Lazy Latent Switch",
-    "inputs": {"condition": ["4", 1], "latent_true": ["6", 0], "latent_false": ["5", 0]},
+    "inputs": {"condition": ["4", 2], "latent_true": ["6", 0], "latent_false": ["5", 0]},
     "_meta": {"title": "Lazy Latent Switch (auto: image ? img2img : txt2img)"}
   },
   "8": {

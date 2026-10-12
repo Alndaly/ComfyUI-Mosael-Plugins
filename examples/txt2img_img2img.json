@@ -62,6 +62,7 @@
       "mode": 0,
       "outputs": [
         {"name": "IMAGE", "type": "IMAGE", "links": [8]},
+        {"name": "MASK", "type": "MASK", "links": null},
         {"name": "has_image", "type": "BOOLEAN", "links": [9]}
       ],
       "properties": {"Node name for S&R": "Optional Load Image"},
@@ -178,7 +179,7 @@
     [6, 2, 0, 8, 1, "CONDITIONING"],
     [7, 3, 0, 8, 2, "CONDITIONING"],
     [8, 4, 0, 6, 0, "IMAGE"],
-    [9, 4, 1, 7, 0, "BOOLEAN"],
+    [9, 4, 2, 7, 0, "BOOLEAN"],
     [10, 6, 0, 7, 1, "LATENT"],
     [11, 5, 0, 7, 2, "LATENT"],
     [12, 7, 0, 8, 3, "LATENT"],

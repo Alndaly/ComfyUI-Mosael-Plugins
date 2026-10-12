@@ -34,8 +34,9 @@ def test_input_types_offers_none_first(cls, input_dir, make_image_file):
 
 
 def test_none_selection_needs_no_file(node, input_dir):
-    image, has_image = node.load_image("none", True)
+    image, mask, has_image = node.load_image("none", True)
     assert image is None
+    assert mask is None
     assert has_image is False
 
 
@@ -46,10 +47,11 @@ def test_none_selection_with_allow_none_disabled(node, input_dir):
 
 def test_image_selection_delegates_to_core_loader(node, input_dir, make_image_file):
     make_image_file("photo.png")
-    tensor = object()
-    StubLoadImage.result = (tensor, "mask")
-    image, has_image = node.load_image("photo.png", True)
+    tensor, mask = object(), "alpha-mask"
+    StubLoadImage.result = (tensor, mask)
+    image, out_mask, has_image = node.load_image("photo.png", True)
     assert image is tensor
+    assert out_mask is mask  # mask passthrough, like the stock LoadImage node
     assert has_image is True
 
 
@@ -77,6 +79,11 @@ def test_failed_load_is_never_treated_as_missing(node, input_dir, make_image_fil
     StubLoadImage.result = (None, None)  # loader produced nothing
     with pytest.raises(RuntimeError, match="no data"):
         node.load_image(name, True)
+
+
+def test_return_types_include_mask(cls):
+    assert cls.RETURN_TYPES == ("IMAGE", "MASK", "BOOLEAN")
+    assert cls.RETURN_NAMES == ("image", "mask", "has_image")
 
 
 def test_validate_inputs(cls, input_dir, make_image_file):
