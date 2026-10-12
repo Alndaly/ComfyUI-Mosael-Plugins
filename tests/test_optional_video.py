@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from conftest import StubCoreLoadVideo
+from conftest import StubCoreLoadVideo, StubVideo, StubVideoComponents, FakeImageTensor
 
 
 @pytest.fixture
@@ -49,9 +49,17 @@ def test_input_types_offers_none_first(loader_cls, input_dir):
 
 
 def test_none_selection_needs_no_file(loader, input_dir):
-    video, has_video = loader.load_video("none", True)
+    video, has_video, images, frame_count, audio = loader.load_video("none", True)
     assert video is None
     assert has_video is False
+    assert images is None
+    assert frame_count == 0
+    assert audio is None
+
+
+def test_return_types_export_components(loader_cls):
+    assert loader_cls.RETURN_TYPES == ("VIDEO", "BOOLEAN", "IMAGE", "INT", "AUDIO")
+    assert loader_cls.RETURN_NAMES == ("video", "has_video", "images", "frame_count", "audio")
 
 
 def test_none_selection_with_allow_none_disabled(loader, input_dir):
@@ -61,13 +69,32 @@ def test_none_selection_with_allow_none_disabled(loader, input_dir):
 
 def test_video_selection_delegates_to_core_loader(loader, input_dir):
     make_video_file(input_dir, "clip.mp4")
-    video_obj = object()
+    video_obj = StubVideo(StubVideoComponents(FakeImageTensor((4, 64, 64, 3)), "audio-obj"))
     StubCoreLoadVideo.video = video_obj
     result = loader.load_video("clip.mp4", True)
     # delegates to core and returns dict form carrying the preview UI
     assert isinstance(result, dict)
-    assert result["result"] == (video_obj, True)
+    assert result["result"] == (video_obj, True, video_obj.components.images, 4, "audio-obj")
     assert result["ui"] == {"images": [{"filename": "x.mp4"}], "animated": (True,)}
+
+
+def test_frame_count_follows_decoded_images(loader, input_dir):
+    make_video_file(input_dir, "long.mp4")
+    StubCoreLoadVideo.video = StubVideo(StubVideoComponents(FakeImageTensor((120, 64, 64, 3))))
+    result = loader.load_video("long.mp4", True)
+    assert result["result"][3] == 120
+
+
+def test_decode_failure_raises_clear_error(loader, input_dir):
+    make_video_file(input_dir, "undecodable.mp4")
+
+    class BrokenVideo:
+        def get_components(self):
+            raise ValueError("no decoder for codec")
+
+    StubCoreLoadVideo.video = BrokenVideo()
+    with pytest.raises(RuntimeError, match="Failed to decode video"):
+        loader.load_video("undecodable.mp4", True)
 
 
 def test_missing_file_is_an_error_not_missing(loader, input_dir):

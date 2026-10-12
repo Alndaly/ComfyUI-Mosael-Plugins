@@ -77,11 +77,35 @@ class StubNodeOutput:
         self.ui = ui
 
 
+class FakeImageTensor:
+    """Minimal tensor stand-in exposing .shape."""
+
+    def __init__(self, shape):
+        self.shape = shape
+
+
+class StubVideoComponents:
+    def __init__(self, images=None, audio=None):
+        self.images = images if images is not None else FakeImageTensor((4, 64, 64, 3))
+        self.audio = audio
+
+
+class StubVideo:
+    """Stand-in for the lazy core Input.Video object."""
+
+    def __init__(self, components=None):
+        self.components = components if components is not None else StubVideoComponents()
+
+    def get_components(self):
+        return self.components
+
+
 class StubCoreLoadVideo:
     """Stand-in for comfy_extras.nodes_video.LoadVideo."""
 
     # class-level knobs
-    video = object()
+    video = StubVideo()
+    decode_error = None
     preview_ui = {"images": [{"filename": "x.mp4"}], "animated": (True,)}
     error = None
 
@@ -144,7 +168,7 @@ def input_dir(tmp_path):
     sys.modules["folder_paths"].input_dir = str(directory)
     StubLoadImage.result = (object(), object())
     StubLoadImage.error = None
-    StubCoreLoadVideo.video = object()
+    StubCoreLoadVideo.video = StubVideo()
     StubCoreLoadVideo.preview_ui = {"images": [{"filename": "x.mp4"}], "animated": (True,)}
     StubCoreLoadVideo.error = None
     return directory

@@ -31,7 +31,7 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 | 节点 | 用途 |
 |---|---|
 | **Optional Load Image** | 加载图片，或显式选择 `none`。输出 `image` + `mask`（由 alpha 通道推导，与官方 Load Image 节点一致；均可为 `None`）+ `has_image`。 |
-| **Optional Load Video** | 加载视频（与官方 Load Video 节点相同的惰性 `VIDEO` 对象），或选择 `none`。输出 `video`（可为 `None`）+ `has_video`。 |
+| **Optional Load Video** | 加载视频（与官方 Load Video 节点相同的惰性 `VIDEO` 对象），或选择 `none`。输出 `video`（可为 `None`）+ `has_video` + 便捷导出 `images`（解码帧）、`frame_count`、`audio`——相当于官方 Get Video Components 节点。 |
 | **Optional Video Preview** | 在界面中预览视频。其 `video` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_video` 后，无视频时整条视频分支都不会执行。 |
 | **Optional Image** | 透传一个可选的 IMAGE 连接，并报告 `has_image`。 |
 | **Has Image** | `IMAGE → BOOLEAN`：图像是否存在？按值本身判断，绝不看像素内容。 |

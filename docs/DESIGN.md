@@ -74,7 +74,7 @@ already-evaluated inputs out of the requested list — see section 4.)
 | Class | Node id | Category | Data type |
 |---|---|---|---|
 | `OptionalImage` | `Optional Image` | Optional Inputs/Image | IMAGE |
-| `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE, MASK || `OptionalLoadVideo` | `Optional Load Video` | Optional Inputs/Video | VIDEO |
+| `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE, MASK || `OptionalLoadVideo` | `Optional Load Video` | Optional Inputs/Video | VIDEO, BOOLEAN, IMAGE, INT, AUDIO |
 | `OptionalVideoPreview` | `Optional Video Preview` | Optional Inputs/Video | VIDEO |
 | `HasImage` | `Has Image` | Optional Inputs/Logic | IMAGE → BOOLEAN |
 | `LazyImageSwitch` | `Lazy Image Switch` | Optional Inputs/Logic | IMAGE |
@@ -186,7 +186,12 @@ nodes_video.py`). The plugin mirrors the image design for it:
   node's `fingerprint_inputs` — instead of hashing large videos. The
   `comfy_extras.nodes_video` import is deferred to the "a video is
   selected" path, so the `none` path (and its unit tests) stays free of
-  av/torch imports.
+  av/torch imports. It additionally exports the decoded components —
+  `images`, `frame_count`, `audio` — via one `get_components()` call, so a
+  single loader also covers frame-based workflows (the role of the stock
+  `GetVideoComponents` node). The `video`/`has_video` slots keep their
+  indices; the new exports are appended after them, so existing links are
+  unaffected.
 - **`OptionalVideoPreview`** is an output node with a lazy optional `video`
   input and a required `condition` BOOLEAN. `check_lazy_status` requests
   the video only when `condition` is True, so wiring `has_video` into

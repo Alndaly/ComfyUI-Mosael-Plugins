@@ -220,6 +220,19 @@ def test_optional_video_with_file(client):
     assert ok, "video run failed: {}".format(detail)
 
 
+def test_optional_video_exports_frames(client):
+    # images (slot 2) must be a real IMAGE tensor: save the decoded frames.
+    name = _upload_video(client)
+    workflow = {
+        "1": {"class_type": "Optional Load Video",
+              "inputs": {"video": name, "allow_none": True}},
+        "2": {"class_type": "SaveImage",
+              "inputs": {"filename_prefix": "oi_video_frames", "images": ["1", 2]}},
+    }
+    ok, detail = client.run(workflow)
+    assert ok, "saving exported frames failed: {}".format(detail)
+
+
 def test_optional_video_invalid_file_rejected(client):
     _, error = client.queue(_video_workflow(client, "ghost_video.mp4"))
     assert error is not None

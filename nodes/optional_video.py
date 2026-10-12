@@ -4,7 +4,11 @@
 type: pick a video file or explicitly select 'none'.  Loading is delegated
 to the core ``LoadVideo`` node so the returned object is the exact same lazy
 ``Input.Video`` value (file-backed, cheap until components are requested)
-and the upload preview UI behaves identically to the stock node.
+and the upload preview UI behaves identically to the stock node.  For
+convenience it also exports the decoded components — ``images``,
+``frame_count`` and ``audio`` — like the stock ``GetVideoComponents``
+node, so a single loader covers both video-object and frame-based
+workflows.
 
 ``OptionalVideoPreview`` previews a video without forcing the video branch
 to execute when no video exists: its ``video`` input is lazy and is only
@@ -49,14 +53,16 @@ class OptionalLoadVideo:
     CATEGORY = "Optional Inputs/Video"
     DESCRIPTION = (
         "Load a video from the input directory, or explicitly select 'none'. "
-        "Outputs the video (same lazy VIDEO object as the stock Load Video "
-        "node) plus a has_video boolean. Selecting 'none' requires no file "
-        "and yields a None video output (safe behind lazy switches) with "
-        "has_video = False."
+        "Outputs: video (same lazy VIDEO object as the stock Load Video "
+        "node), has_video, and convenience exports images (decoded frames), "
+        "frame_count, and audio — like the stock Get Video Components node. "
+        "Selecting a video decodes its frames once so the exports are "
+        "available; selecting 'none' requires no file and yields None "
+        "video/images/audio with frame_count 0 and has_video = False."
     )
 
-    RETURN_TYPES = ("VIDEO", "BOOLEAN")
-    RETURN_NAMES = ("video", "has_video")
+    RETURN_TYPES = ("VIDEO", "BOOLEAN", "IMAGE", "INT", "AUDIO")
+    RETURN_NAMES = ("video", "has_video", "images", "frame_count", "audio")
     FUNCTION = "load_video"
 
     def load_video(self, video, allow_none):
@@ -65,7 +71,7 @@ class OptionalLoadVideo:
                 raise ValueError(
                     "'none' is selected but allow_none is disabled on Optional Load Video"
                 )
-            return (None, False)
+            return (None, False, None, 0, None)
 
         if not folder_paths.exists_annotated_filepath(video):
             raise FileNotFoundError(
@@ -89,10 +95,21 @@ class OptionalLoadVideo:
                 "failed load as a missing video".format(video)
             )
 
+        try:
+            components = loaded.get_components()
+        except Exception as e:
+            raise RuntimeError(
+                "Failed to decode video {!r}: {}".format(video, e)
+            ) from e
+        images = components.images if components is not None else None
+        frame_count = int(images.shape[0]) if images is not None else 0
+        audio = components.audio if components is not None else None
+
         ui = _ui_as_dict(getattr(node_output, "ui", None))
+        result = (loaded, True, images, frame_count, audio)
         if ui is not None:
-            return {"ui": ui, "result": (loaded, True)}
-        return (loaded, True)
+            return {"ui": ui, "result": result}
+        return result
 
     @classmethod
     def IS_CHANGED(cls, video, allow_none):
