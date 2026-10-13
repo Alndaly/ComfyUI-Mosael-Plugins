@@ -79,6 +79,10 @@ already-evaluated inputs out of the requested list — see section 4.)
 | `OptionalLoadAudio` | `Optional Load Audio` | Optional Inputs/Audio | AUDIO, BOOLEAN, INT, FLOAT |
 | `OptionalAudioPreview` | `Optional Audio Preview` | Optional Inputs/Audio | AUDIO |
 | `QuickAudioEdit` | `Quick Audio Edit` | Optional Inputs/Audio | AUDIO, FLOAT |
+| `FunASRTranscribe` | `FunASR Transcribe` | Optional Inputs/FunASR | STRING, STRING |
+| `VADAutoTrimAudio` | `VAD Auto Trim Audio` | Optional Inputs/FunASR | AUDIO, STRING, FLOAT |
+| `AudioTrimBySegments` | `Audio Trim by Segments` | Optional Inputs/FunASR | AUDIO, FLOAT |
+| `LLMAPICall` | `LLM API Call` | Optional Inputs/LLM | STRING |
 | `HasImage` | `Has Image` | Optional Inputs/Logic | IMAGE → BOOLEAN |
 | `LazyImageSwitch` | `Lazy Image Switch` | Optional Inputs/Logic | IMAGE |
 | `LazyLatentSwitch` | `Lazy Latent Switch` | Optional Inputs/Logic | LATENT |
@@ -325,3 +329,45 @@ ComfyUI-Mosael-Plugins/
   proves the branch was skipped. This satisfies the "do not claim lazy
   execution works without testing it" requirement without requiring
   execution-count instrumentation.
+
+## 10. FunASR nodes (optional dependency)
+
+FunASR is **not** a hard dependency: users may not have it, and the plugin
+must stay installable everywhere ComfyUI runs (Windows / Linux / macOS).
+The three nodes (`FunASRTranscribe`, `VADAutoTrimAudio`,
+`AudioTrimBySegments`) register unconditionally so saved workflows load on
+any machine; `funasr` is imported lazily inside execution, and a missing
+package raises a clear `RuntimeError` with the `pip install funasr` hint
+instead of an `ImportError` traceback. Declared in
+`pyproject.toml` under `[project.optional-dependencies] funasr`.
+
+Verified against funasr 1.4.16: `AutoModel(model=..., vad_model=...,
+punc_model=...)` with `disable_update=True`; VAD `generate()` returns
+`{"value": [[start_ms, end_ms], ...]}`, ASR returns `{"text": str,
+"timestamp": [[char_start_ms, char_end_ms], ...]}`. `AutoModel`
+construction is expensive (multi-model load), so instances are cached in a
+module-level dict keyed by constructor kwargs. Audio is fed as a float32
+mono numpy array with `fs=` sample rate; FunASR handles resampling.
+
+**Smart trim / manual second pass.** `VADAutoTrimAudio` post-processes raw
+VAD segments: drop segments shorter than `min_speech`, merge segments
+separated by less than `merge_gap`, pad each by `padding` (clamped to the
+clip), then slice-concatenate the waveform (sample-indexed, no resampling).
+The kept segments are also returned as a JSON string. `AudioTrimBySegments`
+parses that string — tolerating hand edits (trailing commas, whitespace,
+`{"start","end"}` object form) — and re-trims the *original* audio, so the
+user can round-trip: auto-trim → edit numbers → re-trim.
+
+## 11. LLM API Call
+
+`LLMAPICall` speaks the OpenAI-compatible `/chat/completions` protocol with
+a fully user-defined provider (`base_url`, `api_key`, `model`). The
+protocol is implemented with the standard library `urllib` only — no new
+dependency — and covers OpenAI, DeepSeek, Moonshot, Qwen, SiliconFlow,
+Groq, OpenRouter, and local Ollama / vLLM / LM Studio. The
+`Authorization: Bearer <key>` header is only set when a key is given, so
+unauthenticated local endpoints work. HTTP errors surface the response
+body (providers put readable error details there); a list-valued `content`
+(reasoning-style providers) is joined into a string. The API key is a
+normal widget value stored in the workflow JSON; the README advises using
+limited keys.

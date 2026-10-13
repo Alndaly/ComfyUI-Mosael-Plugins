@@ -92,6 +92,23 @@ class OITestFailAudio:
         raise RuntimeError("OI_TEST_FAIL: AUDIO branch executed")
 
 
+class OITestStringOutput:
+    """Output node that echoes a STRING into the UI, for tests that need to
+    land text-producing nodes (e.g. LLM API Call) in an executable graph."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"optional": {"string": ("STRING",)}}
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "echo"
+    CATEGORY = "Optional Inputs/Testing"
+    OUTPUT_NODE = True
+
+    def echo(self, string=None):
+        return {"ui": {"text": [string or ""]}, "result": (string or "",)}
+
+
 NODE_CLASS_MAPPINGS = {
     "OI Test Fail Image": OITestFailImage,
     "OI Test Constant Image": OITestConstantImage,
@@ -99,6 +116,7 @@ NODE_CLASS_MAPPINGS = {
     "OI Test Constant Latent": OITestConstantLatent,
     "OI Test Fail Video": OITestFailVideo,
     "OI Test Fail Audio": OITestFailAudio,
+    "OI Test String Output": OITestStringOutput,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -108,4 +126,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OI Test Constant Latent": "OI Test Constant (LATENT)",
     "OI Test Fail Video": "OI Test Fail (VIDEO)",
     "OI Test Fail Audio": "OI Test Fail (AUDIO)",
+    "OI Test String Output": "OI Test String Output",
 }

@@ -395,3 +395,95 @@ def test_quick_audio_edit_none_passes_through(client):
     }
     ok, detail = client.run(workflow)
     assert ok, "quick edit on None audio failed: {}".format(detail)
+
+
+# --- FunASR nodes ------------------------------------------------------------
+
+@pytest.mark.integration
+class TestFunASRNodes:
+    TINY_SPEECH_FLAC = Path(__file__).parent / "tiny_speech.flac"
+
+    def _upload_speech(self, client):
+        return client.upload_image(
+            content=self.TINY_SPEECH_FLAC.read_bytes(), name="oi_test_speech.flac"
+        )
+
+    def _load_audio(self, client, name):
+        return {
+            "1": {"class_type": "Optional Load Audio",
+                  "inputs": {"audio": name, "allow_none": True}},
+        }
+
+    def test_transcribe_real_speech(self, client):
+        name = self._upload_speech(client)
+        workflow = self._load_audio(client, name)
+        workflow["2"] = {"class_type": "FunASR Transcribe",
+                         "inputs": {"audio": ["1", 0], "asr_model": "paraformer-zh",
+                                    "use_vad": True, "use_punctuation": True}}
+        workflow["3"] = {"class_type": "Optional Audio Preview",
+                         "inputs": {"condition": ["1", 1], "audio": ["1", 0]}}
+        ok, detail = client.run(workflow)
+        assert ok, "transcription run failed: {}".format(detail)
+
+    def test_vad_trim_real_speech(self, client):
+        name = self._upload_speech(client)
+        workflow = self._load_audio(client, name)
+        workflow["2"] = {"class_type": "VAD Auto Trim Audio",
+                         "inputs": {"audio": ["1", 0], "padding": 0.1,
+                                    "min_speech": 0.05, "merge_gap": 0.3,
+                                    "vad_model": "fsmn-vad"}}
+        workflow["3"] = {"class_type": "Optional Audio Preview",
+                         "inputs": {"condition": ["1", 1], "audio": ["2", 0]}}
+        ok, detail = client.run(workflow)
+        assert ok, "VAD trim run failed: {}".format(detail)
+
+    def test_trim_by_segments_roundtrip(self, client):
+        name = self._upload_speech(client)
+        workflow = self._load_audio(client, name)
+        workflow["2"] = {"class_type": "VAD Auto Trim Audio",
+                         "inputs": {"audio": ["1", 0], "padding": 0.1,
+                                    "min_speech": 0.05, "merge_gap": 0.3,
+                                    "vad_model": "fsmn-vad"}}
+        workflow["3"] = {"class_type": "Audio Trim by Segments",
+                         "inputs": {"audio": ["1", 0], "segments": ["2", 1]}}
+        workflow["4"] = {"class_type": "Optional Audio Preview",
+                         "inputs": {"condition": ["1", 1], "audio": ["3", 0]}}
+        ok, detail = client.run(workflow)
+        assert ok, "segments round-trip failed: {}".format(detail)
+
+
+# --- LLM API Call (opt-in via environment variables) -------------------------
+
+@pytest.fixture
+def llm_env(client, pack_installed):
+    """Enable the real LLM test by exporting:
+    LLM_API_URL (base url), LLM_MODEL, and optionally LLM_API_KEY.
+    """
+    base_url = os.environ.get("LLM_API_URL", "")
+    model = os.environ.get("LLM_MODEL", "")
+    api_key = os.environ.get("LLM_API_KEY", "")
+    if not (base_url and model):
+        pytest.skip("set LLM_API_URL, LLM_MODEL (and optionally LLM_API_KEY) to run LLM tests")
+    if not pack_installed:
+        pytest.skip("lazy_proof_pack not installed on the server")
+    return {"client": client, "base_url": base_url, "model": model, "api_key": api_key}
+
+
+def test_llm_api_call_real(llm_env):
+    workflow = {
+        "1": {"class_type": "LLM API Call",
+              "inputs": {
+                  "base_url": llm_env["base_url"],
+                  "model": llm_env["model"],
+                  "prompt": "Reply with exactly: OK",
+                  "system_prompt": "",
+                  "api_key": llm_env["api_key"],
+                  "temperature": 0.0,
+                  "max_tokens": 16,
+                  "timeout": 60.0,
+              }},
+        "2": {"class_type": "OI Test String Output",
+              "inputs": {"string": ["1", 0]}},
+    }
+    ok, detail = llm_env["client"].run(workflow)
+    assert ok, "LLM call failed: {}".format(detail)

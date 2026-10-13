@@ -41,6 +41,10 @@ schedules the unselected branch.
 | **Optional Load Audio** | Load an audio file (or a video's audio track), or select `none`. Outputs `audio` (may be `None`) + `has_audio` + `sample_rate` + `duration`. |
 | **Optional Audio Preview** | Preview audio in the UI. Its `audio` input is lazy and only pulled when `condition` is True — wire `has_audio` in, and the audio branch is skipped entirely when no audio exists. |
 | **Quick Audio Edit** | One-node quick editing: trim (start/duration), volume (dB), linear fade-in/fade-out. Optional-safe — a missing audio passes through as missing. Outputs the edited audio and its new duration. |
+| **FunASR Transcribe** | Speech-to-text with per-character timestamps (verbatim transcript). Optional dependency: `pip install funasr` (Windows/Linux/macOS). |
+| **VAD Auto Trim Audio** | Smart trim: voice-activity detection removes silence. Outputs trimmed audio + an editable segments JSON string. Optional `funasr` dependency. |
+| **Audio Trim by Segments** | Manual second pass: edit the segments string (by hand or programmatically) and re-trim the original audio. |
+| **LLM API Call** | Call any OpenAI-compatible chat API with a fully custom provider — base URL, API key and model name. Works with OpenAI, DeepSeek, Moonshot, Qwen, SiliconFlow, Groq, OpenRouter, and local Ollama / vLLM / LM Studio. No extra dependencies. |
 | **Optional Video Preview** | Preview a video in the UI. Its `video` input is lazy and only pulled when `condition` is True — wire `has_video` in, and the video branch is skipped entirely when no video exists. |
 | **Optional Image** | Pass an optional IMAGE connection through, reporting `has_image`. |
 | **Has Image** | `IMAGE → BOOLEAN`: is an image present? Decided by identity, never by pixel contents. |
@@ -124,6 +128,55 @@ requests.post("http://127.0.0.1:8188/prompt", json={"prompt": workflow, "client_
 
 Full feasibility analysis, protocol details, and known limitations:
 [`docs/DESIGN.md`](docs/DESIGN.md).
+
+## Speech-to-text, smart audio trimming, and LLM calls
+
+### FunASR nodes (optional dependency)
+
+`FunASR Transcribe`, `VAD Auto Trim Audio` and `Audio Trim by Segments`
+require the optional [FunASR](https://github.com/modelscope/FunASR) package
+(not bundled — install it only if you need these nodes):
+
+```bash
+pip install funasr
+```
+
+Works on Windows, Linux and macOS; models (paraformer-zh, fsmn-vad, …) are
+downloaded automatically on first use into the local ModelScope cache. The
+nodes register normally either way — without the package they fail at
+execution time with the install hint instead of breaking workflow loading.
+
+**Verbatim transcript:** `FunASR Transcribe` outputs the text plus
+per-character timestamps (`chars`, JSON: `[{index, start, end}, …]` in
+seconds) — ready for subtitles, karaoke timing, or driving effects per
+character.
+
+**Smart trim + manual second pass:**
+
+1. `VAD Auto Trim Audio` detects speech and cuts silence away, with
+   `padding` / `min_speech` / `merge_gap` controls. It outputs the trimmed
+   audio **and** the kept segments as a JSON string like
+   `[[0.0, 2.1], [3.2, 5.0]]`.
+2. Copy that string into `Audio Trim by Segments`' `segments` widget and
+   edit the numbers freely (it tolerates trailing commas, whitespace, and
+   `{"start":…, "end":…}` object form), then re-trim the *original* audio —
+   or connect the string directly for automatic re-trims.
+
+### LLM API Call
+
+Fully user-defined provider — no vendor list, no hardcoded endpoints:
+
+| Input | Example |
+|---|---|
+| `base_url` | `https://api.deepseek.com/v1`, `https://api.openai.com/v1`, `http://127.0.0.1:11434/v1` (Ollama) |
+| `model` | `deepseek-chat`, `gpt-4o-mini`, `qwen2.5:7b` |
+| `api_key` | provider key; leave empty for endpoints that need none (e.g. local Ollama) |
+
+Speaks the OpenAI-compatible `/chat/completions` protocol (OpenAI, DeepSeek,
+Moonshot, Qwen, SiliconFlow, Groq, OpenRouter, Ollama, vLLM, LM Studio, …).
+Uses only the Python standard library. Note: the API key is a normal widget
+value and is saved into the workflow JSON like any input — prefer a
+limited/throwaway key.
 
 ## Compatibility
 

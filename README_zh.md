@@ -35,6 +35,10 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 | **Optional Load Audio** | 加载音频文件（或视频中的音轨），或选择 `none`。输出 `audio`（可为 `None`）+ `has_audio` + `sample_rate` + `duration`。 |
 | **Optional Audio Preview** | 在界面中预览音频。其 `audio` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_audio` 后，无音频时整条音频分支都不会执行。 |
 | **Quick Audio Edit** | 单节点快捷编辑：截取（起始/时长）、音量（dB）、线性淡入/淡出。可选安全——缺失音频原样透传。输出编辑后的音频及其新时长。 |
+| **FunASR Transcribe** | 语音转文字，输出带逐字时间戳的逐字稿。可选依赖：`pip install funasr`（支持 Windows/Linux/macOS）。 |
+| **VAD Auto Trim Audio** | 智能裁剪：语音活动检测自动去除静音。输出裁剪后音频 + 可编辑的片段 JSON 字符串。可选依赖 `funasr`。 |
+| **Audio Trim by Segments** | 手动二次裁剪：编辑片段字符串（手动或程序化）后对原始音频重新裁剪。 |
+| **LLM API Call** | 调用任意 OpenAI 兼容对话 API，供应商完全自定义——base URL、API key 和模型名。适用于 OpenAI、DeepSeek、Moonshot、通义、硅基流动、Groq、OpenRouter 及本地 Ollama / vLLM / LM Studio。无额外依赖。 |
 | **Optional Video Preview** | 在界面中预览视频。其 `video` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_video` 后，无视频时整条视频分支都不会执行。 |
 | **Optional Image** | 透传一个可选的 IMAGE 连接，并报告 `has_image`。 |
 | **Has Image** | `IMAGE → BOOLEAN`：图像是否存在？按值本身判断，绝不看像素内容。 |
@@ -109,6 +113,49 @@ requests.post("http://127.0.0.1:8188/prompt", json={"prompt": workflow, "client_
   报错。
 
 完整的可行性分析、协议细节与已知限制见 [`docs/DESIGN.md`](docs/DESIGN.md)。
+
+## 语音转文字、智能音频裁剪与 LLM 调用
+
+### FunASR 节点（可选依赖）
+
+`FunASR Transcribe`、`VAD Auto Trim Audio` 与 `Audio Trim by Segments` 需要
+可选的 [FunASR](https://github.com/modelscope/FunASR) 包（不随插件分发——仅需要
+这些节点时再安装）：
+
+```bash
+pip install funasr
+```
+
+支持 Windows / Linux / macOS；模型（paraformer-zh、fsmn-vad 等）首次使用时自动
+下载到本地 ModelScope 缓存。无论是否安装，节点都正常注册——未安装时只在执行阶段
+报出安装指引，不会影响工作流加载。
+
+**逐字稿：** `FunASR Transcribe` 输出文本 + 逐字时间戳（`chars`，JSON：
+`[{index, start, end}, …]`，单位秒）——可直接用于字幕、卡拉OK 时轴或逐字特效。
+
+**智能裁剪 + 手动二次编辑：**
+
+1. `VAD Auto Trim Audio` 检测语音活动并剪掉静音，提供 `padding` / `min_speech` /
+   `merge_gap` 三个控制项。输出裁剪后的音频**以及**保留片段的 JSON 字符串，如
+   `[[0.0, 2.1], [3.2, 5.0]]`。
+2. 把该字符串复制到 `Audio Trim by Segments` 的 `segments` 输入框里自由编辑数字
+   （容错：尾逗号、多余空格、`{"start":…, "end":…}` 对象形式均可），然后对
+   *原始*音频重新裁剪——也可以直接连线实现自动重裁。
+
+### LLM API Call
+
+供应商完全自定义——没有厂商列表、没有硬编码端点：
+
+| 输入 | 示例 |
+|---|---|
+| `base_url` | `https://api.deepseek.com/v1`、`https://api.openai.com/v1`、`http://127.0.0.1:11434/v1`（Ollama） |
+| `model` | `deepseek-chat`、`gpt-4o-mini`、`qwen2.5:7b` |
+| `api_key` | 供应商密钥；无需鉴权的端点（如本地 Ollama）留空即可 |
+
+使用 OpenAI 兼容的 `/chat/completions` 协议（OpenAI、DeepSeek、Moonshot、通义、
+硅基流动、Groq、OpenRouter、Ollama、vLLM、LM Studio……）。仅依赖 Python 标准库。
+注意：API key 是普通 widget 值，会像其他输入一样保存进工作流 JSON——建议使用
+限额/临时密钥。
 
 ## 兼容性
 

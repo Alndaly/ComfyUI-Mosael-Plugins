@@ -7,7 +7,7 @@ image-to-image) without manual re-wiring, bypassing, or boolean toggles.
 See docs/DESIGN.md for the technical design and README.md for usage.
 """
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 from .nodes import (
     OptionalImage,
@@ -17,6 +17,10 @@ from .nodes import (
     OptionalLoadAudio,
     OptionalAudioPreview,
     QuickAudioEdit,
+    FunASRTranscribe,
+    VADAutoTrimAudio,
+    AudioTrimBySegments,
+    LLMAPICall,
     HasImage,
     LazyImageSwitch,
     LazyLatentSwitch,
@@ -32,6 +36,10 @@ NODE_CLASS_MAPPINGS = {
     "Optional Load Audio": OptionalLoadAudio,
     "Optional Audio Preview": OptionalAudioPreview,
     "Quick Audio Edit": QuickAudioEdit,
+    "FunASR Transcribe": FunASRTranscribe,
+    "VAD Auto Trim Audio": VADAutoTrimAudio,
+    "Audio Trim by Segments": AudioTrimBySegments,
+    "LLM API Call": LLMAPICall,
     "Has Image": HasImage,
     "Lazy Image Switch": LazyImageSwitch,
     "Lazy Latent Switch": LazyLatentSwitch,
@@ -47,6 +55,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Optional Load Audio": "Optional Load Audio",
     "Optional Audio Preview": "Optional Audio Preview",
     "Quick Audio Edit": "Quick Audio Edit",
+    "FunASR Transcribe": "FunASR Transcribe",
+    "VAD Auto Trim Audio": "VAD Auto Trim Audio",
+    "Audio Trim by Segments": "Audio Trim by Segments",
+    "LLM API Call": "LLM API Call",
     "Has Image": "Has Image",
     "Lazy Image Switch": "Lazy Image Switch",
     "Lazy Latent Switch": "Lazy Latent Switch",

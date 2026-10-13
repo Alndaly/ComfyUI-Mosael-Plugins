@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui-mosael-plugins"
-version = "1.4.0"
+version = "1.5.0"
 description = "ComfyUI custom nodes: optional inputs and lazy switches that auto-switch a single workflow between txt2img and img2img"
 readme = "README.md"
 license = { text = "MIT" }
@@ -16,6 +16,11 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Multimedia :: Graphics",
 ]
+
+[project.optional-dependencies]
+# Speech-to-text / VAD nodes (FunASR Transcribe, VAD Auto Trim Audio,
+# Audio Trim by Segments). Works on Windows, Linux and macOS.
+funasr = ["funasr"]
 
 [project.urls]
 Homepage = "https://github.com/Alndaly/ComfyUI-Mosael-Plugins"
