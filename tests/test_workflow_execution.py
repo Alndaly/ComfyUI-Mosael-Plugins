@@ -289,3 +289,109 @@ def test_lazy_video_switch_executes_selected_branch(client, pack_installed):
     ok, detail = client.run(workflow)
     assert not ok
     assert "OI_TEST_FAIL" in detail
+
+
+# --- optional audio nodes ----------------------------------------------------
+
+TINY_FLAC_PATH = Path(__file__).parent / "tiny_audio.flac"
+
+
+def _upload_audio(client):
+    return client.upload_image(
+        content=TINY_FLAC_PATH.read_bytes(), name="oi_test_audio.flac"
+    )
+
+
+def _audio_workflow(client, selection):
+    return {
+        "1": {"class_type": "Optional Load Audio",
+              "inputs": {"audio": selection, "allow_none": True}},
+        "2": {"class_type": "Optional Audio Preview",
+              "inputs": {"condition": ["1", 1], "audio": ["1", 0]}},
+    }
+
+
+def test_optional_audio_none(client):
+    # has_audio = False -> the lazy preview never pulls the audio output.
+    ok, detail = client.run(_audio_workflow(client, "none"))
+    assert ok, "audio-less run failed: {}".format(detail)
+
+
+def test_optional_audio_with_file(client):
+    name = _upload_audio(client)
+    ok, detail = client.run(_audio_workflow(client, name))
+    assert ok, "audio run failed: {}".format(detail)
+
+
+def test_optional_audio_invalid_file_rejected(client):
+    _, error = client.queue(_audio_workflow(client, "ghost_audio.flac"))
+    assert error is not None
+    assert "ghost_audio.flac" in json.dumps(error)
+
+
+def test_optional_audio_quick_edit(client):
+    # Load -> Quick Audio Edit (trim to 1s, fade) -> preview. The edited
+    # audio must still be playable, proving the edit pipeline works.
+    name = _upload_audio(client)
+    workflow = {
+        "1": {"class_type": "Optional Load Audio",
+              "inputs": {"audio": name, "allow_none": True}},
+        "2": {"class_type": "Quick Audio Edit",
+              "inputs": {"audio": ["1", 0], "start_time": 0.5, "duration": 1.0,
+                         "volume_db": -3.0, "fade_in": 0.1, "fade_out": 0.1}},
+        "3": {"class_type": "Optional Audio Preview",
+              "inputs": {"condition": ["1", 1], "audio": ["2", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert ok, "quick edit run failed: {}".format(detail)
+
+
+def test_optional_audio_preview_skips_branch_without_audio(client, pack_installed):
+    # An always-failing AUDIO node sits between the loader and the lazy
+    # preview. If the preview pulled the audio branch despite
+    # has_audio = False, the run would fail; success proves it never did.
+    if not pack_installed:
+        pytest.skip("lazy_proof_pack not installed on the server")
+    workflow = {
+        "1": {"class_type": "Optional Load Audio",
+              "inputs": {"audio": "none", "allow_none": True}},
+        "2": {"class_type": "OI Test Fail Audio", "inputs": {}},
+        "3": {"class_type": "Optional Audio Preview",
+              "inputs": {"condition": ["1", 1], "audio": ["2", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert ok, "audio branch was executed despite has_audio=False: {}".format(detail)
+
+
+def test_optional_audio_preview_executes_branch_with_audio(client, pack_installed):
+    # Same graph with an actual audio file: now condition is True, the fail
+    # node IS on the selected path, and the run must fail with its message —
+    # proving the selection really follows condition.
+    if not pack_installed:
+        pytest.skip("lazy_proof_pack not installed on the server")
+    name = _upload_audio(client)
+    workflow = {
+        "1": {"class_type": "Optional Load Audio",
+              "inputs": {"audio": name, "allow_none": True}},
+        "2": {"class_type": "OI Test Fail Audio", "inputs": {}},
+        "3": {"class_type": "Optional Audio Preview",
+              "inputs": {"condition": ["1", 1], "audio": ["2", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert not ok
+    assert "OI_TEST_FAIL" in detail
+
+
+def test_quick_audio_edit_none_passes_through(client):
+    # Quick Audio Edit is optional-safe: None in, None out, no error.
+    workflow = {
+        "1": {"class_type": "Optional Load Audio",
+              "inputs": {"audio": "none", "allow_none": True}},
+        "2": {"class_type": "Quick Audio Edit",
+              "inputs": {"audio": ["1", 0], "start_time": 0.0, "duration": 0.0,
+                         "volume_db": 0.0, "fade_in": 0.0, "fade_out": 0.0}},
+        "3": {"class_type": "Optional Audio Preview",
+              "inputs": {"condition": True, "audio": ["2", 0]}},
+    }
+    ok, detail = client.run(workflow)
+    assert ok, "quick edit on None audio failed: {}".format(detail)

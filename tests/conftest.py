@@ -35,11 +35,17 @@ class StubFolderPaths(types.ModuleType):
         return self.input_dir
 
     def filter_files_content_types(self, files, content_types):
+        exts = set()
         if "image" in content_types:
-            return [f for f in files if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS]
+            exts |= IMAGE_EXTENSIONS
         if "video" in content_types:
-            return [f for f in files if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS]
-        return list(files)
+            exts |= VIDEO_EXTENSIONS
+        if "audio" in content_types:
+            # like the core LoadAudio node, audio listings also include videos
+            exts |= AUDIO_EXTENSIONS | VIDEO_EXTENSIONS
+        if not exts:
+            return list(files)
+        return [f for f in files if os.path.splitext(f)[1].lower() in exts]
 
     def get_annotated_filepath(self, name, default_dir=None):
         base = os.path.realpath(default_dir or self.input_dir)
@@ -78,10 +84,15 @@ class StubNodeOutput:
 
 
 class FakeImageTensor:
-    """Minimal tensor stand-in exposing .shape."""
+    """Minimal tensor stand-in exposing .shape and .unsqueeze."""
 
     def __init__(self, shape):
         self.shape = shape
+
+    def unsqueeze(self, dim):
+        new_shape = list(self.shape)
+        new_shape.insert(dim if dim >= 0 else len(new_shape) + dim + 1, 1)
+        return FakeImageTensor(tuple(new_shape))
 
 
 class StubVideoComponents:
@@ -132,6 +143,51 @@ def _install_video_stub():
     parent.nodes_video = stub
 
 
+AUDIO_EXTENSIONS = {".mp3", ".flac", ".wav", ".ogg", ".opus", ".m4a", ".aac"}
+
+
+class StubCoreLoadAudio:
+    """Stand-in for comfy_extras.nodes_audio.load()."""
+
+    # class-level knob: (waveform [channels, samples], sample_rate)
+    result = (FakeImageTensor((2, 44100)), 44100)
+    error = None
+
+    @classmethod
+    def load(cls, filepath):
+        if cls.error is not None:
+            raise cls.error
+        return cls.result
+
+
+class StubPreviewAudioUI:
+    def __init__(self, audio):
+        self.audio = audio
+
+    def as_dict(self):
+        return {"audio": [{"filename": "preview.flac"}]}
+
+
+def _install_audio_stub():
+    if "comfy_extras" in sys.modules and "comfy_extras.nodes_audio" in sys.modules:
+        pass
+    else:
+        parent = sys.modules.get("comfy_extras") or types.ModuleType("comfy_extras")
+        stub = types.ModuleType("comfy_extras.nodes_audio")
+        stub.load = StubCoreLoadAudio.load
+        sys.modules["comfy_extras"] = parent
+        sys.modules["comfy_extras.nodes_audio"] = stub
+        parent.nodes_audio = stub
+
+    if not ("comfy_api" in sys.modules and "comfy_api.latest" in sys.modules):
+        comfy_api = sys.modules.get("comfy_api") or types.ModuleType("comfy_api")
+        latest = types.ModuleType("comfy_api.latest")
+        latest.ui = types.SimpleNamespace(PreviewAudio=StubPreviewAudioUI)
+        sys.modules["comfy_api"] = comfy_api
+        sys.modules["comfy_api.latest"] = latest
+        comfy_api.latest = latest
+
+
 def _install_stubs():
     if "folder_paths" not in sys.modules:
         sys.modules["folder_paths"] = StubFolderPaths()
@@ -140,6 +196,7 @@ def _install_stubs():
         stub.LoadImage = StubLoadImage
         sys.modules["nodes"] = stub
     _install_video_stub()
+    _install_audio_stub()
 
 
 def _load_plugin():
@@ -171,6 +228,8 @@ def input_dir(tmp_path):
     StubCoreLoadVideo.video = StubVideo()
     StubCoreLoadVideo.preview_ui = {"images": [{"filename": "x.mp4"}], "animated": (True,)}
     StubCoreLoadVideo.error = None
+    StubCoreLoadAudio.result = (FakeImageTensor((2, 44100)), 44100)
+    StubCoreLoadAudio.error = None
     return directory
 
 

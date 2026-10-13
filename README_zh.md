@@ -32,6 +32,9 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 |---|---|
 | **Optional Load Image** | 加载图片，或显式选择 `none`。输出 `image` + `mask`（由 alpha 通道推导，与官方 Load Image 节点一致；均可为 `None`）+ `has_image`。 |
 | **Optional Load Video** | 加载视频（与官方 Load Video 节点相同的惰性 `VIDEO` 对象），或选择 `none`。输出 `video`（可为 `None`）+ `has_video` + 便捷导出 `images`（解码帧）、`frame_count`、`audio`——相当于官方 Get Video Components 节点。 |
+| **Optional Load Audio** | 加载音频文件（或视频中的音轨），或选择 `none`。输出 `audio`（可为 `None`）+ `has_audio` + `sample_rate` + `duration`。 |
+| **Optional Audio Preview** | 在界面中预览音频。其 `audio` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_audio` 后，无音频时整条音频分支都不会执行。 |
+| **Quick Audio Edit** | 单节点快捷编辑：截取（起始/时长）、音量（dB）、线性淡入/淡出。可选安全——缺失音频原样透传。输出编辑后的音频及其新时长。 |
 | **Optional Video Preview** | 在界面中预览视频。其 `video` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_video` 后，无视频时整条视频分支都不会执行。 |
 | **Optional Image** | 透传一个可选的 IMAGE 连接，并报告 `has_image`。 |
 | **Has Image** | `IMAGE → BOOLEAN`：图像是否存在？按值本身判断，绝不看像素内容。 |

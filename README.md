@@ -38,6 +38,9 @@ schedules the unselected branch.
 |---|---|
 | **Optional Load Image** | Load an image, or explicitly select `none`. Outputs `image` + `mask` (alpha-derived, like the stock Load Image node; both may be `None`) + `has_image`. |
 | **Optional Load Video** | Load a video (same lazy `VIDEO` object as the stock Load Video node), or select `none`. Outputs `video` (may be `None`) + `has_video` + convenience exports `images` (decoded frames), `frame_count`, `audio` — like the stock Get Video Components node. |
+| **Optional Load Audio** | Load an audio file (or a video's audio track), or select `none`. Outputs `audio` (may be `None`) + `has_audio` + `sample_rate` + `duration`. |
+| **Optional Audio Preview** | Preview audio in the UI. Its `audio` input is lazy and only pulled when `condition` is True — wire `has_audio` in, and the audio branch is skipped entirely when no audio exists. |
+| **Quick Audio Edit** | One-node quick editing: trim (start/duration), volume (dB), linear fade-in/fade-out. Optional-safe — a missing audio passes through as missing. Outputs the edited audio and its new duration. |
 | **Optional Video Preview** | Preview a video in the UI. Its `video` input is lazy and only pulled when `condition` is True — wire `has_video` in, and the video branch is skipped entirely when no video exists. |
 | **Optional Image** | Pass an optional IMAGE connection through, reporting `has_image`. |
 | **Has Image** | `IMAGE → BOOLEAN`: is an image present? Decided by identity, never by pixel contents. |

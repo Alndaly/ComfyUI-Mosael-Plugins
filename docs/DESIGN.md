@@ -76,6 +76,9 @@ already-evaluated inputs out of the requested list — see section 4.)
 | `OptionalImage` | `Optional Image` | Optional Inputs/Image | IMAGE |
 | `OptionalLoadImage` | `Optional Load Image` | Optional Inputs/Image | IMAGE, MASK || `OptionalLoadVideo` | `Optional Load Video` | Optional Inputs/Video | VIDEO, BOOLEAN, IMAGE, INT, AUDIO |
 | `OptionalVideoPreview` | `Optional Video Preview` | Optional Inputs/Video | VIDEO |
+| `OptionalLoadAudio` | `Optional Load Audio` | Optional Inputs/Audio | AUDIO, BOOLEAN, INT, FLOAT |
+| `OptionalAudioPreview` | `Optional Audio Preview` | Optional Inputs/Audio | AUDIO |
+| `QuickAudioEdit` | `Quick Audio Edit` | Optional Inputs/Audio | AUDIO, FLOAT |
 | `HasImage` | `Has Image` | Optional Inputs/Logic | IMAGE → BOOLEAN |
 | `LazyImageSwitch` | `Lazy Image Switch` | Optional Inputs/Logic | IMAGE |
 | `LazyLatentSwitch` | `Lazy Latent Switch` | Optional Inputs/Logic | LATENT |
@@ -202,6 +205,33 @@ nodes_video.py`). The plugin mirrors the image design for it:
   passing the video through unchanged.
 - **`LazyVideoSwitch`** is the typed VIDEO sibling of the image/latent
   switches; identical protocol.
+
+## 5c. Optional audio nodes
+
+The core `AUDIO` type is a dict `{"waveform": Tensor[batch, channels,
+samples], "sample_rate": int}` (`comfy_api/latest/_io.py`). The plugin
+mirrors the image/video design:
+
+- **`OptionalLoadAudio`** offers `["none"] + audio and video files` (the
+  stock `LoadAudio` also accepts video containers for their audio track)
+  with the native `{"audio_upload": True}` widget. Decoding delegates to
+  the core `nodes_audio.load()`, and the audio dict is built exactly like
+  the stock node's (`waveform.unsqueeze(0)` for the batch dimension).
+  Common components are exported directly: `sample_rate` (INT) and
+  `duration` in seconds (FLOAT). `IS_CHANGED` hashes the file like the
+  core node's `fingerprint_inputs` (audio files are small enough).
+- **`OptionalAudioPreview`** follows the `OptionalVideoPreview` pattern:
+  lazy optional `audio` pulled only when `condition` is True, then
+  previewed through the core `ui.PreviewAudio` helper (which encodes a
+  temp FLAC) and passed through unchanged.
+- **`QuickAudioEdit`** bundles the most frequent edits in one node —
+  trim (`start_time` seconds, negative counts from the end; `duration`
+  0 = to the end, mirroring the core `TrimAudioDuration` semantics),
+  volume (`volume_db`, `10**(dB/20)` linear gain like the core
+  `AudioAdjustVolume`), and linear fade-in/fade-out clamped to the clip
+  length. Edits apply as trim → volume → fades; a `None` input passes
+  through as `None`, making the node safe anywhere on an optional path.
+  It outputs the edited audio plus its new `duration` (FLOAT seconds).
 
 ## 6. Validation analysis
 

@@ -79,12 +79,26 @@ class OITestFailVideo:
         raise RuntimeError("OI_TEST_FAIL: VIDEO branch executed")
 
 
+class OITestFailAudio:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {}}
+
+    RETURN_TYPES = ("AUDIO",)
+    FUNCTION = "fail"
+    CATEGORY = "Optional Inputs/Testing"
+
+    def fail(self):
+        raise RuntimeError("OI_TEST_FAIL: AUDIO branch executed")
+
+
 NODE_CLASS_MAPPINGS = {
     "OI Test Fail Image": OITestFailImage,
     "OI Test Constant Image": OITestConstantImage,
     "OI Test Fail Latent": OITestFailLatent,
     "OI Test Constant Latent": OITestConstantLatent,
     "OI Test Fail Video": OITestFailVideo,
+    "OI Test Fail Audio": OITestFailAudio,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -93,4 +107,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OI Test Fail Latent": "OI Test Fail (LATENT)",
     "OI Test Constant Latent": "OI Test Constant (LATENT)",
     "OI Test Fail Video": "OI Test Fail (VIDEO)",
+    "OI Test Fail Audio": "OI Test Fail (AUDIO)",
 }
