@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui-mosael-plugins"
-version = "1.5.0"
+version = "1.5.1"
 description = "ComfyUI custom nodes: optional inputs and lazy switches that auto-switch a single workflow between txt2img and img2img"
 readme = "README.md"
 license = { text = "MIT" }

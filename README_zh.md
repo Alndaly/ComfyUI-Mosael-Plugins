@@ -157,6 +157,10 @@ pip install funasr
 注意：API key 是普通 widget 值，会像其他输入一样保存进工作流 JSON——建议使用
 限额/临时密钥。
 
+**JSON 输出：** 把 `response_format` 设为 `json_object` 可请求保证为 JSON 的回复
+（OpenAI 式 `response_format` 参数——OpenAI、DeepSeek、Moonshot、通义等均支持）。
+请在提示词中提及 "json" 及期望的结构；个别不支持的模型/供应商可能对该参数报错。
+
 ## 兼容性
 
 - 已在 **ComfyUI `08ff3c11` / `0df64eb`（master，2026-10-09）** 上测试——即撰写时的最新版本。

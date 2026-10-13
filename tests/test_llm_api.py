@@ -58,6 +58,7 @@ def base_kwargs(**overrides):
         "temperature": 0.5,
         "max_tokens": 128,
         "timeout": 30.0,
+        "response_format": "text",
     }
     kwargs.update(overrides)
     return kwargs
@@ -133,6 +134,16 @@ def test_null_content_becomes_empty_string(llm, http_calls):
     http_calls["response"] = {"choices": [{"message": {"content": None}}]}
     (response,) = llm.call(**base_kwargs())
     assert response == ""
+
+
+def test_json_mode_sets_response_format(llm, http_calls):
+    llm.call(**base_kwargs(response_format="json_object"))
+    assert http_calls["request"]["body"]["response_format"] == {"type": "json_object"}
+
+
+def test_text_mode_omits_response_format(llm, http_calls):
+    llm.call(**base_kwargs(response_format="text"))
+    assert "response_format" not in http_calls["request"]["body"]
 
 
 def test_registered(plugin):

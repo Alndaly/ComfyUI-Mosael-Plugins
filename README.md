@@ -178,6 +178,12 @@ Uses only the Python standard library. Note: the API key is a normal widget
 value and is saved into the workflow JSON like any input — prefer a
 limited/throwaway key.
 
+**JSON output:** set `response_format` to `json_object` to request
+guaranteed-JSON replies (the OpenAI-style `response_format` parameter —
+supported by OpenAI, DeepSeek, Moonshot, Qwen and others). Mention "json"
+and the desired structure in your prompt; some providers reject the
+parameter on models that don't support it.
+
 ## Compatibility
 
 - Tested against **ComfyUI `08ff3c11` / `0df64eb` (master, 2026-10-09)** —

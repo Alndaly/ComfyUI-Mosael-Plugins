@@ -366,8 +366,23 @@ protocol is implemented with the standard library `urllib` only — no new
 dependency — and covers OpenAI, DeepSeek, Moonshot, Qwen, SiliconFlow,
 Groq, OpenRouter, and local Ollama / vLLM / LM Studio. The
 `Authorization: Bearer <key>` header is only set when a key is given, so
-unauthenticated local endpoints work. HTTP errors surface the response
+unauthenticated local endpoints work. `response_format = json_object` maps
+to the OpenAI-style `response_format: {"type": "json_object"}` body field
+for providers with guaranteed-JSON mode. HTTP errors surface the response
 body (providers put readable error details there); a list-valued `content`
 (reasoning-style providers) is joined into a string. The API key is a
 normal widget value stored in the workflow JSON; the README advises using
 limited keys.
+
+## 12. Frontend extension (web/optional_audio_ui.js)
+
+The core frontend's `Comfy.UploadAudio` extension injects an upload widget
+into *any* node whose `audio` combo carries `audio_upload: true`, but the
+`audioUI` player widget it depends on is only injected for a hardcoded list
+of stock node classes. Without an `audioUI` widget the injected AUDIOUPLOAD
+widget throws on node creation — "Optional Load Audio" failed to load in
+the canvas. The plugin ships a minimal `app.registerExtension`
+(`beforeRegisterNodeDef`) that adds `required.audioUI = ["AUDIO_UI", {}]`
+(and re-orders it before the injected `upload` input) for our audio node,
+mirroring the core injection. No core files are modified, no monkey
+patches; the extension is scoped by node name.

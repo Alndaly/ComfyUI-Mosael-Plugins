@@ -46,9 +46,10 @@ def client():
 
 @pytest.fixture(scope="module")
 def pack_installed(client):
+    # /object_info/<name> falls back to the full node list (HTTP 200) for
+    # unknown names, so a successful response is not proof — check the key.
     try:
-        client.object_info("OI Test Fail Image")
-        return True
+        return "OI Test Fail Image" in client.object_info("OI Test Fail Image")
     except Exception:
         return False
 

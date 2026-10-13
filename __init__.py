@@ -7,7 +7,7 @@ image-to-image) without manual re-wiring, bypassing, or boolean toggles.
 See docs/DESIGN.md for the technical design and README.md for usage.
 """
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 from .nodes import (
     OptionalImage,
@@ -66,4 +66,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Lazy Any Switch": "Lazy Any Switch",
 }
 
-__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "__version__"]
+WEB_DIRECTORY = "./web"
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "__version__", "WEB_DIRECTORY"]

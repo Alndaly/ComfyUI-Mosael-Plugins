@@ -38,6 +38,8 @@ class LLMAPICall:
                                        "tooltip": "Response token cap; 0 = provider default"}),
                 "timeout": ("FLOAT", {"default": 60.0, "min": 1.0, "max": 600.0, "step": 1.0,
                                       "tooltip": "Request timeout in seconds"}),
+                "response_format": (["text", "json_object"], {"default": "text",
+                                                              "tooltip": "json_object asks the provider for guaranteed-JSON output (OpenAI-style response_format). Not every provider/model supports it — unsupported ones may return an error."}),
             },
         }
 
@@ -46,7 +48,10 @@ class LLMAPICall:
         "Call any OpenAI-compatible chat completion API with a fully custom "
         "provider: base URL, API key and model. Works with OpenAI, DeepSeek, "
         "Moonshot, Qwen, SiliconFlow, Groq, OpenRouter, and local Ollama / "
-        "vLLM / LM Studio. Returns the assistant message text."
+        "vLLM / LM Studio. Returns the assistant message text. "
+        "response_format = json_object requests guaranteed-JSON output "
+        "(OpenAI-style response_format; mention 'json' and the desired "
+        "structure in the prompt — some providers require it)."
     )
 
     RETURN_TYPES = ("STRING",)
@@ -54,7 +59,7 @@ class LLMAPICall:
     FUNCTION = "call"
 
     def call(self, base_url, model, prompt, system_prompt, api_key,
-             temperature, max_tokens, timeout):
+             temperature, max_tokens, timeout, response_format):
         url = base_url.rstrip("/") + "/chat/completions"
 
         messages = []
@@ -69,6 +74,8 @@ class LLMAPICall:
         }
         if max_tokens > 0:
             body["max_tokens"] = max_tokens
+        if response_format == "json_object":
+            body["response_format"] = {"type": "json_object"}
 
         headers = {"Content-Type": "application/json"}
         if api_key.strip():
