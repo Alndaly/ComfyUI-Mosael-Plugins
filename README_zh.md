@@ -39,6 +39,7 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 | **VAD Auto Trim Audio** | 智能裁剪：语音活动检测自动去除静音。输出裁剪后音频 + 可编辑的片段 JSON 字符串。可选依赖 `funasr`。 |
 | **Audio Trim by Segments** | 手动二次裁剪：编辑片段字符串（手动或程序化）后对原始音频重新裁剪。 |
 | **LLM API Call** | 调用任意 OpenAI 兼容对话 API，供应商完全自定义——base URL、API key 和模型名。适用于 OpenAI、DeepSeek、Moonshot、通义、硅基流动、Groq、OpenRouter 及本地 Ollama / vLLM / LM Studio。无额外依赖。 |
+| **Text Translate** | 文本翻译：免费免密钥 Google Translate，或自定义 OpenAI 兼容 LLM；支持自动识别源语言、长文本 Google 分段、LLM 术语/风格指令。无额外依赖。 |
 | **Optional Video Preview** | 在界面中预览视频。其 `video` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_video` 后，无视频时整条视频分支都不会执行。 |
 | **Optional Image** | 透传一个可选的 IMAGE 连接，并报告 `has_image`。 |
 | **Has Image** | `IMAGE → BOOLEAN`：图像是否存在？按值本身判断，绝不看像素内容。 |
@@ -160,6 +161,30 @@ pip install funasr
 **JSON 输出：** 把 `response_format` 设为 `json_object` 可请求保证为 JSON 的回复
 （OpenAI 式 `response_format` 参数——OpenAI、DeepSeek、Moonshot、通义等均支持）。
 请在提示词中提及 "json" 及期望的结构；个别不支持的模型/供应商可能对该参数报错。
+
+### Text Translate：文本翻译
+
+在 `Optional Inputs/LLM` 分类下添加 **Text Translate**，将文本或
+`FunASR Transcribe.text` 接入 `text`，从 `translated_text` 获取译文。
+
+- **Google**（默认）：免 API key，无需安装额外依赖。`source_language=auto`
+  自动识别源语言，`target_language` 填 `en`（英语）、`zh-CN`（简体中文）、
+  `zh-TW`（繁体中文）、`ja`（日语）等语言代码。Google 模式忽略 LLM 配置。
+- **LLM**：复用现有 `LLM API Call` 客户端，支持自定义 OpenAI 兼容服务。
+  设置 `base_url`、`model`、`api_key`；默认地址为本地 Ollama 的
+  `http://127.0.0.1:11434/v1`，模型 `qwen2.5:7b`（需自行安装/提供）。
+  语言可填代码或名称；`instructions` 可指定术语、文风等翻译要求。
+  `max_tokens=0` 使用供应商默认值，长文本可按需要增大；输出要求仅包含译文。
+
+例如：中文提示词 → `Text Translate`（Google，auto → en）→ `CLIP Text Encode`。
+空白文本原样返回，不发送请求。Google 长文本按最多 1000 字符分段，优先在空白处
+切分并保留分段边界的空白；分段可能影响上下文连贯性。`timeout` 为每次请求的超时秒数。
+请求失败会报错，不会把原文伪装成译文；LLM 返回空译文同样报错。
+
+Google 模式使用[非官方 Google Translate 接口](https://github.com/ssut/py-googletrans)，
+需要能访问 `translate.googleapis.com`，可能限流或随服务变化失效；它不是
+[Google Cloud Translation](https://cloud.google.com/products/translate/pricing) 的付费 API。
+LLM 的 API key 会保存在工作流 JSON 中，分享前请清除。
 
 ## 兼容性
 

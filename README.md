@@ -45,6 +45,7 @@ schedules the unselected branch.
 | **VAD Auto Trim Audio** | Smart trim: voice-activity detection removes silence. Outputs trimmed audio + an editable segments JSON string. Optional `funasr` dependency. |
 | **Audio Trim by Segments** | Manual second pass: edit the segments string (by hand or programmatically) and re-trim the original audio. |
 | **LLM API Call** | Call any OpenAI-compatible chat API with a fully custom provider — base URL, API key and model name. Works with OpenAI, DeepSeek, Moonshot, Qwen, SiliconFlow, Groq, OpenRouter, and local Ollama / vLLM / LM Studio. No extra dependencies. |
+| **Text Translate** | Translate text with free keyless Google Translate or a custom OpenAI-compatible LLM. Automatic source detection, Google long-text chunking, and LLM terminology/style instructions. No extra dependencies. |
 | **Optional Video Preview** | Preview a video in the UI. Its `video` input is lazy and only pulled when `condition` is True — wire `has_video` in, and the video branch is skipped entirely when no video exists. |
 | **Optional Image** | Pass an optional IMAGE connection through, reporting `has_image`. |
 | **Has Image** | `IMAGE → BOOLEAN`: is an image present? Decided by identity, never by pixel contents. |
@@ -183,6 +184,34 @@ guaranteed-JSON replies (the OpenAI-style `response_format` parameter —
 supported by OpenAI, DeepSeek, Moonshot, Qwen and others). Mention "json"
 and the desired structure in your prompt; some providers reject the
 parameter on models that don't support it.
+
+### Text Translate
+
+Add **Text Translate** under `Optional Inputs/LLM`. Connect text (including
+`FunASR Transcribe.text`) to `text`; use `translated_text` as the result.
+
+- **Google** (default): keyless, with no extra dependencies. Use
+  `source_language=auto` for detection and a target language code such as
+  `en`, `zh-CN`, `zh-TW`, `ja`, `ko`, `fr`, or `de`. LLM settings are ignored.
+- **LLM**: reuses the existing `LLM API Call` client. Set `base_url`, `model`,
+  and `api_key` for any OpenAI-compatible provider. Defaults target local
+  Ollama at `http://127.0.0.1:11434/v1`, model `qwen2.5:7b` (must be installed
+  or supplied separately). Language names also work. Use `instructions` for
+  terminology or style. `max_tokens=0` uses the provider default; increase it
+  as needed for long text. The model is instructed to return only a translation.
+
+Example: Chinese prompt → `Text Translate` (Google, auto → en) → `CLIP Text Encode`.
+Blank input passes through without a request. Google input is split into chunks
+of at most 1000 characters, preferring whitespace boundaries and preserving
+boundary whitespace; splitting may reduce context quality. `timeout` applies
+per request. Failures raise errors rather than silently returning source text;
+an empty LLM translation also raises an error.
+
+Google mode uses an [unofficial Google Translate endpoint](https://github.com/ssut/py-googletrans).
+It requires access to `translate.googleapis.com` and may be rate limited or
+change without notice; it is separate from the paid
+[Google Cloud Translation API](https://cloud.google.com/products/translate/pricing).
+LLM API keys are saved in workflow JSON; remove them before sharing.
 
 ## Compatibility
 
