@@ -28,13 +28,25 @@ cp -r tests/lazy_proof_pack ../OI-LazyProofPack   # once, then restart the serve
 COMFYUI_URL=http://127.0.0.1:8188 pytest tests -m integration
 ```
 
-Please run both suites before submitting changes to node behavior.
+Frontend audio editor regression tests (Node.js 18+, no npm dependencies):
+
+```bash
+node --test tests/web/audio_segments_editor.test.cjs
+```
+
+Please run the relevant suites before submitting changes to node behavior.
+The frontend tests cover parsing, source discovery, scheduling/cancellation,
+resource cleanup, widget persistence, and numeric input focus preservation.
+For browser QA, use a file-backed audio source and check reverse drag, resize,
+move, zoom/pan, numeric entry with Tab, multi-segment playback/Stop, Apply,
+Cancel, and closing while loading. A running ComfyUI instance is needed for
+full frontend integration.
 
 ## Guidelines
 
 - **Use only documented, official ComfyUI custom-node APIs.** The plugin
-  deliberately avoids core patches, frontend JavaScript, and undocumented
-  hacks; keep it that way. The mechanisms we rely on (optional inputs,
+  avoids core patches and undocumented hacks. Frontend enhancements use
+  the official extension hooks and remain scoped to plugin nodes. The mechanisms we rely on (optional inputs,
   `{"lazy": True}`, `check_lazy_status`, `VALIDATE_INPUTS`, `IS_CHANGED`) are
   all used by ComfyUI's own built-in nodes.
 - **Never fabricate placeholder data.** A missing value is `None` + a false

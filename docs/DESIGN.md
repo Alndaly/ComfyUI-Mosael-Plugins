@@ -386,3 +386,46 @@ the canvas. The plugin ships a minimal `app.registerExtension`
 (and re-orders it before the injected `upload` input) for our audio node,
 mirroring the core injection. No core files are modified, no monkey
 patches; the extension is scoped by node name.
+
+## 13. Visual audio segments editor (web/audio_segments_editor.js)
+
+`AudioTrimBySegments` gains a frontend-only "Open visual editor" button
+(added via `app.registerExtension` + `onNodeCreated` + a non-serialized
+button widget). The dialog:
+
+- **Source discovery** accepts a directly connected `Optional Load Audio` or
+  stock `LoadAudio`, optionally through `Reroute`, using the node's own graph.
+  Other audio transformations are rejected because they can change the time
+  axis; the editor must preview the audio actually entering the trim node.
+  Files are fetched through ComfyUI's `api.fetchApi("/view?…")` to respect
+  deployment prefixes/authentication, with subfolders and storage annotations.
+  A connected `segments` input must be disconnected before widget editing;
+  Apply also rejects a source changed while the dialog was open.
+- **Waveform** is rendered on a canvas from the Web Audio
+  `decodeAudioData` buffer (min/max per pixel column), with a time ruler,
+  zoom (wheel/buttons), pan (slider or Shift+drag) and fit.
+- **Interaction**: drag on empty waveform creates a segment; drag near an
+  edge resizes; drag inside moves; Del/Backspace deletes; a list below
+  allows numeric editing, per-segment audition and deletion.
+- **Audition**: each segment plays via a scheduled
+  `AudioBufferSourceNode` range; "Play result" schedules all segments
+  back-to-back. Both preview and Apply clip/round boundaries and sort ranges
+  chronologically, retaining overlaps as repeated audio like the backend.
+  Playback ranges are scheduled on sample boundaries; browser decoding may
+  resample or differ from the server decoder. Every active/scheduled source is
+  tracked until it ends so Stop reliably cancels all remaining segments.
+- **Apply** serializes the segments to the same JSON string format the
+  backend parses (`[[start, end], ...]`, seconds, 3-decimal rounding) and
+  writes it into the `segments` widget value.
+
+No core modifications; the dialog is plain DOM with an overlay and cleans
+up its listeners on close, aborts pending fetches, and closes its AudioContext.
+Late decoding or old open requests cannot revive a closed/reopened dialog.
+Malformed JSON is reported before editing; filenames are inserted as text.
+Loading disables editing and playback. Numeric redraws preserve input focus;
+Escape/Tab and deletion shortcuts are scoped to the modal. Browser-unsupported
+formats (including some video containers) require extracting a WAV first.
+
+Frontend regression checks run without ComfyUI or npm dependencies:
+`node --test tests/web/audio_segments_editor.test.cjs`. Python tests remain
+separate; these checks mock the graph, DOM fragments, and audio scheduling.

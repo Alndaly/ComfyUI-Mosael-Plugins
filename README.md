@@ -163,6 +163,24 @@ character.
    `{"start":…, "end":…}` object form), then re-trim the *original* audio —
    or connect the string directly for automatic re-trims.
 
+**Visual editor:** the `Audio Trim by Segments` node has an **"✂ Open visual
+editor"** button. It opens a waveform dialog where you can drag to create
+segments, resize/move them by their edges, delete them, zoom/pan — and
+audition each segment or the concatenated trim result before applying.
+Applying writes the segments JSON back into the node. The editor needs a
+directly connected `Optional Load Audio` or stock `LoadAudio` with a file selected
+(`Reroute` is allowed). Connect the original loader output rather than the
+output of VAD or Quick Audio Edit: those nodes can change the timeline.
+Disconnect a linked `segments` input before editing its widget value.
+
+Use the wheel or +/− to zoom; use the position slider or Shift+drag to pan.
+Drag either direction to create a range. Invalid segment JSON is reported
+without overwriting it. Preview and Apply sort ranges by start time, clamp them
+to the audio duration, and preserve overlapping ranges as repeated audio,
+matching the backend's concatenation behavior. Cancel discards edits.
+Decoding uses the browser's supported audio formats; if a video or codec cannot
+be decoded, extract a WAV file and select it in the loader.
+
 ### LLM API Call
 
 Fully user-defined provider — no vendor list, no hardcoded endpoints:

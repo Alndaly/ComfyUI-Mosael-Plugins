@@ -7,7 +7,7 @@ image-to-image) without manual re-wiring, bypassing, or boolean toggles.
 See docs/DESIGN.md for the technical design and README.md for usage.
 """
 
-__version__ = "1.5.1"
+__version__ = "1.6.0"
 
 from .nodes import (
     OptionalImage,
