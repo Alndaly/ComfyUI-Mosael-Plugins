@@ -15,6 +15,7 @@ leave it empty when the endpoint does not need one (e.g. local Ollama).
 
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from ..utils.optional_values import has_value
@@ -60,7 +61,14 @@ class LLMAPICall:
 
     def call(self, base_url, model, prompt, system_prompt, api_key,
              temperature, max_tokens, timeout, response_format):
-        url = base_url.rstrip("/") + "/chat/completions"
+        base_url = base_url.strip().rstrip("/")
+        parsed = urllib.parse.urlsplit(base_url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc or parsed.query or parsed.fragment:
+            raise ValueError("base_url must be an HTTP(S) API base URL without a query or fragment.")
+        model = model.strip()
+        if not model:
+            raise ValueError("model must not be empty.")
+        url = base_url + "/chat/completions"
 
         messages = []
         if system_prompt.strip():
@@ -99,31 +107,40 @@ class LLMAPICall:
             raise RuntimeError(
                 "LLM API returned HTTP {}: {}".format(e.code, detail or e.reason)
             ) from e
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, OSError) as e:
             raise RuntimeError(
                 "Could not reach LLM API at {}: {}. Check base_url and "
-                "network.".format(url, e.reason)
+                "network.".format(url, getattr(e, "reason", str(e)))
             ) from e
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, UnicodeError) as e:
             raise RuntimeError(
                 "LLM API response was not JSON: {}".format(e)
             ) from e
 
         try:
-            content = payload["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as e:
+            choice = payload["choices"][0]
+            content = choice["message"]["content"]
+            if choice.get("finish_reason") == "length":
+                raise RuntimeError(
+                    "LLM response was truncated. Increase max_tokens or the provider's "
+                    "output limit, or shorten the input."
+                )
+            if isinstance(content, list):
+                parts = []
+                for part in content:
+                    if not isinstance(part, dict) or not isinstance(part.get("text", ""), str):
+                        raise TypeError("invalid text content part")
+                    parts.append(part.get("text", ""))
+                content = "".join(parts)
+            if content is not None and not isinstance(content, str):
+                raise TypeError("content must be text")
+        except (KeyError, IndexError, TypeError, AttributeError) as e:
             raise RuntimeError(
                 "Unexpected LLM API response structure: {}".format(
                     json.dumps(payload, ensure_ascii=False)[:500]
                 )
             ) from e
 
-        if isinstance(content, list):
-            # Some providers return content parts (e.g. with reasoning models)
-            content = "".join(
-                part.get("text", "") if isinstance(part, dict) else str(part)
-                for part in content
-            )
         if not has_value(content):
             content = ""
-        return (str(content),)
+        return (content,)

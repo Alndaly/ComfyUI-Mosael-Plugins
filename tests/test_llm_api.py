@@ -148,3 +148,35 @@ def test_text_mode_omits_response_format(llm, http_calls):
 
 def test_registered(plugin):
     assert "LLM API Call" in plugin.NODE_CLASS_MAPPINGS
+
+
+def test_whitespace_in_endpoint_and_model_is_trimmed(llm, http_calls):
+    llm.call(**base_kwargs(base_url=" https://api.example.com/v1/ ", model=" custom-model "))
+    assert http_calls["request"]["url"] == "https://api.example.com/v1/chat/completions"
+    assert http_calls["request"]["body"]["model"] == "custom-model"
+
+
+@pytest.mark.parametrize("kwargs", [{"base_url": ""}, {"base_url": "file:///tmp/test"}, {"model": " "}])
+def test_invalid_endpoint_configuration_fails_before_network(llm, http_calls, kwargs):
+    with pytest.raises(ValueError, match="base_url|model"):
+        llm.call(**base_kwargs(**kwargs))
+    assert http_calls["request"] is None
+
+
+def test_timeout_uses_actionable_network_error(llm, http_calls):
+    http_calls["response"] = TimeoutError("timed out")
+    with pytest.raises(RuntimeError, match="Could not reach LLM API"):
+        llm.call(**base_kwargs())
+
+
+def test_truncated_reply_is_not_reported_as_a_complete_result(llm, http_calls):
+    http_calls["response"] = {"choices": [{"finish_reason": "length", "message": {"content": "partial"}}]}
+    with pytest.raises(RuntimeError, match="max_tokens"):
+        llm.call(**base_kwargs())
+
+
+@pytest.mark.parametrize("content", [{"text": "bad"}, 123, [{"text": None}]])
+def test_invalid_content_shape_has_clear_error(llm, http_calls, content):
+    http_calls["response"] = {"choices": [{"message": {"content": content}}]}
+    with pytest.raises(RuntimeError, match="response"):
+        llm.call(**base_kwargs())
