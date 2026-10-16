@@ -35,7 +35,7 @@ Optional Load Image ──image──▶ VAE Encode ──▶ latent_true ──
 | **Optional Load Audio** | 加载音频文件（或视频中的音轨），或选择 `none`。输出 `audio`（可为 `None`）+ `has_audio` + `sample_rate` + `duration`。 |
 | **Optional Audio Preview** | 在界面中预览音频。其 `audio` 输入为懒输入，仅当 `condition` 为 True 时才拉取——接入 `has_audio` 后，无音频时整条音频分支都不会执行。 |
 | **Quick Audio Edit** | 单节点快捷编辑：截取（起始/时长）、音量（dB）、线性淡入/淡出。可选安全——缺失音频原样透传。输出编辑后的音频及其新时长。 |
-| **FunASR Transcribe** | 语音转文字，输出带逐字时间戳的逐字稿。可选依赖：`pip install funasr`（支持 Windows/Linux/macOS）。 |
+| **FunASR Transcribe** | 语音转文字，输出文本及模型提供的时间戳。可选依赖：`pip install funasr`（支持 Windows/Linux/macOS）。 |
 | **VAD Auto Trim Audio** | 智能裁剪：语音活动检测自动去除静音。输出裁剪后音频 + 可编辑的片段 JSON 字符串。可选依赖 `funasr`。 |
 | **Audio Trim by Segments** | 手动二次裁剪：编辑片段字符串（手动或程序化）后对原始音频重新裁剪。 |
 | **LLM API Call** | 调用任意 OpenAI 兼容对话 API，供应商完全自定义——base URL、API key 和模型名。适用于 OpenAI、DeepSeek、Moonshot、通义、硅基流动、Groq、OpenRouter 及本地 Ollama / vLLM / LM Studio。无额外依赖。 |
@@ -119,7 +119,7 @@ requests.post("http://127.0.0.1:8188/prompt", json={"prompt": workflow, "client_
 
 ### FunASR 节点（可选依赖）
 
-`FunASR Transcribe`、`VAD Auto Trim Audio` 与 `Audio Trim by Segments` 需要
+`FunASR Transcribe` 和 `VAD Auto Trim Audio` 需要
 可选的 [FunASR](https://github.com/modelscope/FunASR) 包（不随插件分发——仅需要
 这些节点时再安装）：
 
@@ -131,8 +131,13 @@ pip install funasr
 下载到本地 ModelScope 缓存。无论是否安装，节点都正常注册——未安装时只在执行阶段
 报出安装指引，不会影响工作流加载。
 
-**逐字稿：** `FunASR Transcribe` 输出文本 + 逐字时间戳（`chars`，JSON：
-`[{index, start, end}, …]`，单位秒）——可直接用于字幕、卡拉OK 时轴或逐字特效。
+`Audio Trim by Segments` 仅使用 ComfyUI 自带的 PyTorch，无需安装 FunASR。
+转写和 VAD 要求音频 batch size 为 1，多声道会混为单声道供模型识别。
+空音频不会加载模型；VAD 的 padding 重叠部分会合并，避免重复拼接。
+
+**时间戳：** `FunASR Transcribe` 输出文本及模型时间戳（`chars`，JSON：
+`[{index, start, end}, …]`，单位秒）。`index` 是时间戳序号；中文通常按字、英文
+可能按词，标点不保证有时间戳。模型不支持时返回 `[]`，并非始终与文本逐字符对齐。
 
 **智能裁剪 + 手动二次编辑：**
 
@@ -146,7 +151,7 @@ pip install funasr
 **可视化编辑器：** `Audio Trim by Segments` 节点带有 **"✂ Open visual
 editor"** 按钮，弹出波形编辑窗口：在波形上拖拽即可新建片段，拖动边缘可调整
 起止点、拖动内部可整体移动，支持缩放/平移；可**逐段试听**或试听**拼接后的
-裁剪结果**，确认无误后一键 Apply 写回节点的 segments 值。编辑器需要上游有
+裁剪结果**，确认无误后一键 Apply 写回节点的 segments 值。编辑器需要
 直接连接已选文件的 `Optional Load Audio` 或官方 `LoadAudio`（允许经过
 `Reroute`）。请接原始加载器输出，避免接 VAD 或 Quick Audio Edit 的输出：这些
 节点可能改变时间轴。若 `segments` 已连接上游，请先断开再编辑文本框。
@@ -174,6 +179,8 @@ editor"** 按钮，弹出波形编辑窗口：在波形上拖拽即可新建片�
 **JSON 输出：** 把 `response_format` 设为 `json_object` 可请求保证为 JSON 的回复
 （OpenAI 式 `response_format` 参数——OpenAI、DeepSeek、Moonshot、通义等均支持）。
 请在提示词中提及 "json" 及期望的结构；个别不支持的模型/供应商可能对该参数报错。
+回复被 token 上限截断时会报错，请增大 `max_tokens` / 服务端输出上限，或缩短输入。
+LLM 调用与翻译遵循 ComfyUI 默认缓存：输入不变时可能复用上次结果。
 
 ### Text Translate：文本翻译
 
@@ -199,8 +206,13 @@ Google 模式使用[非官方 Google Translate 接口](https://github.com/ssut/p
 [Google Cloud Translation](https://cloud.google.com/products/translate/pricing) 的付费 API。
 LLM 的 API key 会保存在工作流 JSON 中，分享前请清除。
 
+`Quick Audio Edit` 的 `start_time` 可填负数，从音频末尾计算；`volume_db`
+支持 −120 到 +60 dB，负值用于降低音量。空音频在 `Optional Audio Preview` 中
+会清空播放器并保持音频输出，避免送入编码器后报错。
+
 ## 兼容性
 
+- 本轮逐节点验证环境与结果见 [节点审核报告](docs/NODE_AUDIT.md)。
 - 已在 **ComfyUI `08ff3c11` / `0df64eb`（master，2026-10-09）** 上测试——即撰写时的最新版本。
 - 无额外 Python 依赖；只使用 ComfyUI 核心 API（`folder_paths`、`nodes.LoadImage`）。
 - 使用执行引擎仍完整支持的 legacy（V1）节点 API。
@@ -223,8 +235,7 @@ COMFYUI_URL=http://127.0.0.1:8188 pytest tests -m integration
 
 集成测试里包含一个放在未选中分支上的"必然报错节点"：运行通过即从机器层面证明懒求值
 确实跳过了该分支。跑这部分测试前，请把 `tests/lazy_proof_pack/` 也复制到 `custom_nodes`。
-两套测试（49 个单元 + 11 个集成）均已在 ComfyUI master（2026-10-09）上用真实 checkpoint
-跑通。
+逐节点检查结果、真实运行环境与已知限制见 [节点审核报告](docs/NODE_AUDIT.md)。
 
 ## 故障排查
 

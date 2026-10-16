@@ -109,7 +109,52 @@ class OITestStringOutput:
         return {"ui": {"text": [string or ""]}, "result": (string or "",)}
 
 
+
+class OITestEmptyAudio:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {}}
+
+    RETURN_TYPES = ("AUDIO",)
+    FUNCTION = "constant"
+    CATEGORY = "Optional Inputs/Testing"
+
+    def constant(self):
+        return ({"waveform": torch.zeros(1, 1, 0), "sample_rate": 16000},)
+
+
+class OITestAudioOutput:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"audio": ("AUDIO",)}}
+
+    RETURN_TYPES = ()
+    FUNCTION = "inspect"
+    CATEGORY = "Optional Inputs/Testing"
+    OUTPUT_NODE = True
+
+    def inspect(self, audio):
+        return {"ui": {"shape": [list(audio["waveform"].shape)]}, "result": ()}
+
+
+class OITestLatentOutput:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"latent": ("LATENT",)}}
+
+    RETURN_TYPES = ()
+    FUNCTION = "inspect"
+    CATEGORY = "Optional Inputs/Testing"
+    OUTPUT_NODE = True
+
+    def inspect(self, latent):
+        return {"ui": {"shape": [list(latent["samples"].shape)]}, "result": ()}
+
+
 NODE_CLASS_MAPPINGS = {
+    "OI Test Empty Audio": OITestEmptyAudio,
+    "OI Test Audio Output": OITestAudioOutput,
+    "OI Test Latent Output": OITestLatentOutput,
     "OI Test Fail Image": OITestFailImage,
     "OI Test Constant Image": OITestConstantImage,
     "OI Test Fail Latent": OITestFailLatent,

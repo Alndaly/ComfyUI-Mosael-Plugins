@@ -18,8 +18,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# Speech-to-text / VAD nodes (FunASR Transcribe, VAD Auto Trim Audio,
-# Audio Trim by Segments). Works on Windows, Linux and macOS.
+# Speech-to-text / VAD nodes. Manual Audio Trim by Segments needs no extra package.
+# Works on Windows, Linux and macOS.
 funasr = ["funasr"]
 
 [project.urls]

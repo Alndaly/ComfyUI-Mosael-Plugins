@@ -41,7 +41,7 @@ schedules the unselected branch.
 | **Optional Load Audio** | Load an audio file (or a video's audio track), or select `none`. Outputs `audio` (may be `None`) + `has_audio` + `sample_rate` + `duration`. |
 | **Optional Audio Preview** | Preview audio in the UI. Its `audio` input is lazy and only pulled when `condition` is True — wire `has_audio` in, and the audio branch is skipped entirely when no audio exists. |
 | **Quick Audio Edit** | One-node quick editing: trim (start/duration), volume (dB), linear fade-in/fade-out. Optional-safe — a missing audio passes through as missing. Outputs the edited audio and its new duration. |
-| **FunASR Transcribe** | Speech-to-text with per-character timestamps (verbatim transcript). Optional dependency: `pip install funasr` (Windows/Linux/macOS). |
+| **FunASR Transcribe** | Speech-to-text with model-provided timestamps. Optional dependency: `pip install funasr` (Windows/Linux/macOS). |
 | **VAD Auto Trim Audio** | Smart trim: voice-activity detection removes silence. Outputs trimmed audio + an editable segments JSON string. Optional `funasr` dependency. |
 | **Audio Trim by Segments** | Manual second pass: edit the segments string (by hand or programmatically) and re-trim the original audio. |
 | **LLM API Call** | Call any OpenAI-compatible chat API with a fully custom provider — base URL, API key and model name. Works with OpenAI, DeepSeek, Moonshot, Qwen, SiliconFlow, Groq, OpenRouter, and local Ollama / vLLM / LM Studio. No extra dependencies. |
@@ -134,7 +134,7 @@ Full feasibility analysis, protocol details, and known limitations:
 
 ### FunASR nodes (optional dependency)
 
-`FunASR Transcribe`, `VAD Auto Trim Audio` and `Audio Trim by Segments`
+`FunASR Transcribe` and `VAD Auto Trim Audio`
 require the optional [FunASR](https://github.com/modelscope/FunASR) package
 (not bundled — install it only if you need these nodes):
 
@@ -147,10 +147,16 @@ downloaded automatically on first use into the local ModelScope cache. The
 nodes register normally either way — without the package they fail at
 execution time with the install hint instead of breaking workflow loading.
 
-**Verbatim transcript:** `FunASR Transcribe` outputs the text plus
-per-character timestamps (`chars`, JSON: `[{index, start, end}, …]` in
-seconds) — ready for subtitles, karaoke timing, or driving effects per
-character.
+`Audio Trim by Segments` uses ComfyUI's PyTorch and does not require FunASR.
+Transcription and VAD require audio batch size 1; channels are mixed to mono
+for inference. Empty audio does not load a model. Overlapping VAD padding is
+merged to avoid repeating audio.
+
+**Timestamps:** `FunASR Transcribe` returns model-provided timestamps
+(`chars`, JSON: `[{index, start, end}, …]`, seconds). `index` enumerates the
+model's timestamp units: often characters for Chinese, potentially words for
+English, without guaranteed punctuation alignment. Models without timestamps
+return `[]`; these are not guaranteed to align with every text character.
 
 **Smart trim + manual second pass:**
 
@@ -202,6 +208,9 @@ guaranteed-JSON replies (the OpenAI-style `response_format` parameter —
 supported by OpenAI, DeepSeek, Moonshot, Qwen and others). Mention "json"
 and the desired structure in your prompt; some providers reject the
 parameter on models that don't support it.
+Truncated replies raise an error; increase `max_tokens` / the provider output
+limit, or shorten the input. LLM and translation nodes follow ComfyUI's default
+cache: unchanged inputs may reuse the previous result.
 
 ### Text Translate
 
@@ -231,8 +240,14 @@ change without notice; it is separate from the paid
 [Google Cloud Translation API](https://cloud.google.com/products/translate/pricing).
 LLM API keys are saved in workflow JSON; remove them before sharing.
 
+`Quick Audio Edit.start_time` accepts negative values to count from the end.
+`volume_db` supports −120 to +60 dB, including attenuation. Empty audio clears
+`Optional Audio Preview` while preserving the audio output, avoiding encoder
+errors on zero samples.
+
 ## Compatibility
 
+- See the [node audit](docs/NODE_AUDIT.md) for the current validation environment and results.
 - Tested against **ComfyUI `08ff3c11` / `0df64eb` (master, 2026-10-09)** —
   both the current release line at time of writing.
 - Requires no additional Python packages; only ComfyUI core APIs
@@ -259,8 +274,8 @@ COMFYUI_URL=http://127.0.0.1:8188 pytest tests -m integration
 The integration suite includes an *always-fail node* placed on the unselected
 branch: a passing run is machine proof that lazy execution really skipped it.
 For those tests, copy `tests/lazy_proof_pack/` into your `custom_nodes` as
-well. Both suites (49 unit + 11 integration tests) pass against ComfyUI
-master (2026-10-09) with real checkpoints.
+well. Current validation results and limitations are recorded in the
+[node audit](docs/NODE_AUDIT.md).
 
 ## Troubleshooting
 

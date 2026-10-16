@@ -31,7 +31,7 @@ COMFYUI_URL=http://127.0.0.1:8188 pytest tests -m integration
 Frontend audio editor regression tests (Node.js 18+, no npm dependencies):
 
 ```bash
-node --test tests/web/audio_segments_editor.test.cjs
+node --test tests/web/*.test.cjs
 ```
 
 Please run the relevant suites before submitting changes to node behavior.
@@ -40,7 +40,9 @@ resource cleanup, widget persistence, and numeric input focus preservation.
 For browser QA, use a file-backed audio source and check reverse drag, resize,
 move, zoom/pan, numeric entry with Tab, multi-segment playback/Stop, Apply,
 Cancel, and closing while loading. A running ComfyUI instance is needed for
-full frontend integration.
+full frontend integration. To exercise VAD without downloading models, set
+`COMFYUI_FUNASR_VAD_MODEL` to an existing local model directory. The custom LLM
+integration tests use a local mock server; the external-provider test is opt-in.
 
 ## Guidelines
 

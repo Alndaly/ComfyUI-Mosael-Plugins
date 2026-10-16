@@ -427,5 +427,20 @@ Escape/Tab and deletion shortcuts are scoped to the modal. Browser-unsupported
 formats (including some video containers) require extracting a WAV first.
 
 Frontend regression checks run without ComfyUI or npm dependencies:
-`node --test tests/web/audio_segments_editor.test.cjs`. Python tests remain
+`node --test tests/web/*.test.cjs`. Python tests remain
 separate; these checks mock the graph, DOM fragments, and audio scheduling.
+
+## 14. Node contract audit
+
+The 2026-10-16 audit and per-node results are recorded in
+[NODE_AUDIT.md](NODE_AUDIT.md). Preview nodes explicitly return empty UI
+payloads when skipped, and zero-sample audio never enters the preview encoder.
+The frontend adds the stock AUDIO_UI widget for the optional audio preview
+and clears it on empty output. The editor button sets both `serialize = false`
+and `options.serialize = false`: LiteGraph workflow persistence and ComfyUI API
+export use different flags.
+
+Speech nodes accept one batch item, mix channels to float32 mono for FunASR,
+and bypass model loading for empty input. VAD padding overlaps are merged;
+the emitted segment JSON is also used for slicing, so a manual second pass
+reproduces the same samples. Manual overlapping ranges remain intentional.
