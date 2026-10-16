@@ -164,4 +164,4 @@ class OptionalVideoPreview:
         if condition and has_value(video):
             ui = _ui_as_dict(_core_video_module().save_video_preview(video))
             return {"ui": ui, "result": (video,)}
-        return {"result": (None,)}
+        return {"ui": {"images": [], "animated": (True,)}, "result": (None,)}

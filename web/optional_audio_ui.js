@@ -1,42 +1,58 @@
-/**
- * Companion frontend extension for the plugin's audio nodes.
- *
- * Why this exists: the core frontend's `Comfy.UploadAudio` extension adds an
- * upload widget to ANY node whose `audio` combo carries `audio_upload: true`,
- * but the matching `audioUI` player widget is only injected for a hardcoded
- * list of stock node classes (`LoadAudio`, `PreviewAudio`, ...). Without an
- * `audioUI` widget the upload widget throws when the node is added to the
- * canvas, so "Optional Load Audio" fails to load.
- *
- * This extension mirrors the core injection for our node: add an `audioUI`
- * input so the stock AUDIO_UI / AUDIOUPLOAD widgets find each other. The
- * `audioUI` input must be inserted BEFORE the injected `upload` input,
- * because the AUDIOUPLOAD widget is created in input order and immediately
- * looks up the `audioUI` widget. No core files are modified and no APIs are
- * monkey-patched.
+/** Install the stock audio player for plugin loaders and previews.
+ * AUDIOUPLOAD requires AUDIO_UI to be created first. The stock frontend
+ * only adds it for its own node names, so use the same extension hook here.
  */
 import { app } from "../../scripts/app.js";
 
-const OUR_AUDIO_NODES = new Set(["Optional Load Audio"]);
+const OUR_AUDIO_NODES = new Set(["Optional Load Audio", "Optional Audio Preview"]);
+
+function clearPlayer(node) {
+    const widget = node.widgets?.find((w) => w.name === "audioUI");
+    if (!widget?.element) return;
+    widget.element.pause();
+    widget.element.removeAttribute("src");
+    widget.element.load();
+    widget.element.classList.add("empty-audio-widget");
+    widget.value = "";
+    widget.callback?.("");
+}
 
 app.registerExtension({
     name: "Mosael.OptionalAudioUI",
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (!OUR_AUDIO_NODES.has(nodeData?.name)) return;
         const required = nodeData.input?.required;
-        if (
-            required?.audio?.[1]?.audio_upload !== true ||
-            required.audioUI !== undefined
-        ) {
-            return;
-        }
-        // Re-insert the injected upload input (if any) after audioUI so the
-        // widget creation order is audio, ..., audioUI, upload.
+        if (!required || required.audioUI !== undefined) return;
+        // The player must precede any upload widget injected by ComfyUI.
         const upload = required.upload;
         delete required.upload;
         required.audioUI = ["AUDIO_UI", {}];
-        if (upload !== undefined) {
-            required.upload = upload;
+        if (upload !== undefined) required.upload = upload;
+    },
+    nodeCreated(node) {
+        const type = node.comfyClass || node.type;
+        if (type === "Optional Load Audio") {
+            const audio = node.widgets?.find((w) => w.name === "audio");
+            if (!audio) return;
+            const callback = audio.callback;
+            audio.callback = function () {
+                if (audio.value === "none") clearPlayer(node);
+                else return callback?.apply(this, arguments);
+            };
+            const onGraphConfigured = node.onGraphConfigured;
+            node.onGraphConfigured = function () {
+                const result = onGraphConfigured?.apply(this, arguments);
+                if (audio.value === "none") clearPlayer(this);
+                return result;
+            };
+            if (audio.value === "none") clearPlayer(node);
+        } else if (type === "Optional Audio Preview") {
+            const onExecuted = node.onExecuted;
+            node.onExecuted = function (output) {
+                const result = onExecuted?.apply(this, arguments);
+                if (output.audio?.length === 0) clearPlayer(this);
+                return result;
+            };
         }
     },
 });

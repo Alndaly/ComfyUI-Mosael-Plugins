@@ -724,7 +724,7 @@ app.registerExtension({
             };
             const button = this.addWidget("button", "✂ Open visual editor", null, () => {
                 editor.open();
-            });
+            }, { serialize: false });
             button.serialize = false;
         };
     },

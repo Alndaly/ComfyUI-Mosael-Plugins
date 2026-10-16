@@ -142,12 +142,12 @@ def test_check_lazy_status_requests_audio_only_when_condition_true(preview):
 
 def test_preview_skips_when_condition_false(preview):
     result = preview.preview(False, audio=make_audio())
-    assert result == {"result": (None,)}
+    assert result == {"ui": {"audio": []}, "result": (None,)}
 
 
 def test_preview_skips_when_audio_none(preview):
     result = preview.preview(True, audio=None)
-    assert result == {"result": (None,)}
+    assert result == {"ui": {"audio": []}, "result": (None,)}
 
 
 def test_preview_emits_ui_and_passes_through(preview):
@@ -231,3 +231,35 @@ def test_edit_preserves_batch_and_channels(edit):
     audio = make_audio(seconds=1.0, sample_rate=1000, channels=2, batch=3)
     edited, _ = edit.edit(0.0, 0.0, 0.0, 0.0, 0.0, audio=audio)
     assert edited["waveform"].shape == (3, 2, 1000)
+
+
+def test_edit_widgets_allow_negative_start_and_gain(edit_cls):
+    fields = edit_cls.INPUT_TYPES()["required"]
+    assert fields["start_time"][1]["min"] < 0
+    assert fields["volume_db"][1]["min"] < 0
+    assert fields["duration"][1]["max"] > 2048  # long clips are valid
+
+
+def test_one_sample_fade_is_applied(edit):
+    audio = {"waveform": torch.ones(1, 1, 1), "sample_rate": 1000}
+    result, duration = edit.edit(0, 0, 0, 0.01, 0, audio=audio)
+    assert duration == 0.001
+    assert result["waveform"].item() == 0
+    assert audio["waveform"].item() == 1
+
+
+def test_empty_audio_preview_clears_ui_and_preserves_the_audio(preview):
+    audio = make_audio(seconds=0)
+    result = preview.preview(True, audio=audio)
+    assert result["ui"] == {"audio": []}
+    assert result["result"][0] is audio
+
+
+@pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
+def test_volume_widget_extremes_produce_finite_audio(edit_cls, edit, dtype):
+    options = edit_cls.INPUT_TYPES()["required"]["volume_db"][1]
+    audio = make_audio()
+    audio["waveform"] = audio["waveform"].to(dtype)
+    for gain in (options["min"], options["max"]):
+        result, _ = edit.edit(0, 0, gain, 0, 0, audio=audio)
+        assert torch.isfinite(result["waveform"]).all()

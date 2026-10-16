@@ -158,10 +158,12 @@ class OptionalAudioPreview:
 
     def preview(self, condition, audio=None):
         if condition and has_value(audio):
+            if audio["waveform"].shape[-1] == 0 or audio["waveform"].shape[0] == 0:
+                return {"ui": {"audio": []}, "result": (audio,)}
             from comfy_api.latest import ui
             ui_output = ui.PreviewAudio(audio)
             return {"ui": _ui_as_dict(ui_output), "result": (audio,)}
-        return {"result": (None,)}
+        return {"ui": {"audio": []}, "result": (None,)}
 
 
 class QuickAudioEdit:
@@ -172,15 +174,15 @@ class QuickAudioEdit:
                 "audio": ("AUDIO",),
             },
             "required": {
-                "start_time": ("FLOAT", {"default": 0.0, "step": 0.01,
+                "start_time": ("FLOAT", {"default": 0.0, "min": -1e12, "max": 1e12, "step": 0.01,
                                          "tooltip": "Trim start in seconds; negative counts from the end"}),
-                "duration": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.01,
+                "duration": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1e12, "step": 0.01,
                                        "tooltip": "Trim length in seconds; 0 keeps everything to the end"}),
-                "volume_db": ("FLOAT", {"default": 0.0, "step": 0.5,
+                "volume_db": ("FLOAT", {"default": 0.0, "min": -120.0, "max": 60.0, "step": 0.5,
                                         "tooltip": "Volume change in dB; 0 = unchanged, +6 ≈ double, -6 ≈ half"}),
-                "fade_in": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.01,
+                "fade_in": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1e12, "step": 0.01,
                                       "tooltip": "Linear fade-in in seconds"}),
-                "fade_out": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.01,
+                "fade_out": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1e12, "step": 0.01,
                                        "tooltip": "Linear fade-out in seconds"}),
             },
         }
@@ -228,7 +230,7 @@ class QuickAudioEdit:
         # --- fades (linear, clamped to the clip length) ---
         fade_in_frames = int(round(fade_in * sample_rate)) if fade_in > 0 else 0
         fade_out_frames = int(round(fade_out * sample_rate)) if fade_out > 0 else 0
-        if (fade_in_frames > 0 or fade_out_frames > 0) and length > 1:
+        if (fade_in_frames > 0 or fade_out_frames > 0) and length > 0:
             waveform = waveform.clone()
             if fade_in_frames > 0:
                 n = min(fade_in_frames, length)

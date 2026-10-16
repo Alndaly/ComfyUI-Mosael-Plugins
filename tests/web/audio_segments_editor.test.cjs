@@ -192,12 +192,13 @@ test('extension adds a non-serialized button and preserves node hooks', async ()
     class Node {
         onNodeCreated() { created++; }
         onRemoved() { removed++; }
-        addWidget(type, name, value, callback) { this.button = { type, callback }; return this.button; }
+        addWidget(type, name, value, callback, options = {}) { this.button = { type, callback, options }; return this.button; }
     }
     await app.extension.beforeRegisterNodeDef(Node, { name: 'Audio Trim by Segments' });
     const node = new Node();
     node.onNodeCreated();
     assert.equal(node.button.serialize, false);
+    assert.equal(node.button.options.serialize, false, "ComfyUI API export checks options.serialize");
     node.onRemoved();
     assert.equal(created, 1);
     assert.equal(removed, 1);

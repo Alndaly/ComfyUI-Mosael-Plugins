@@ -160,13 +160,13 @@ def test_check_lazy_status_requests_video_only_when_condition_true(preview):
 
 def test_preview_skips_when_condition_false(preview):
     result = preview.preview(False, video=object())
-    assert result == {"result": (None,)}
+    assert result == {"ui": {"images": [], "animated": (True,)}, "result": (None,)}
 
 
 def test_preview_skips_when_condition_true_but_video_none(preview):
     # e.g. upstream evaluated to None (loader set to 'none')
     result = preview.preview(True, video=None)
-    assert result == {"result": (None,)}
+    assert result == {"ui": {"images": [], "animated": (True,)}, "result": (None,)}
 
 
 def test_preview_emits_ui_and_passes_through(preview):
