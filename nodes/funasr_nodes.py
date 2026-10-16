@@ -8,7 +8,7 @@ ModelScope cache (~/.cache/modelscope or %USERPROFILE%\\.cache\\modelscope).
 
 Nodes:
 
-* ``FunASR Transcribe`` — AUDIO -> transcribed text plus per-character
+* ``FunASR Transcribe`` — AUDIO -> transcribed text plus model-provided
   timestamps (the "verbatim transcript", 逐字稿).
 * ``VAD Auto Trim Audio`` — speech-activity detection trims silence away;
   outputs the trimmed audio plus the segment list as an editable JSON
@@ -19,6 +19,7 @@ Nodes:
 """
 
 import json
+import math
 
 from ..utils.optional_values import has_value
 
@@ -58,6 +59,17 @@ def _audio_seconds(audio) -> float:
     return float(audio["waveform"].shape[-1]) / float(audio["sample_rate"])
 
 
+def _mono_samples(audio):
+    """FunASR produces one transcript/timeline, so require one audio item."""
+    waveform = audio["waveform"]
+    if waveform.ndim != 3 or waveform.shape[0] != 1 or waveform.shape[1] < 1:
+        raise ValueError(
+            "FunASR expects AUDIO [batch, channels, samples] with batch size 1. "
+            "Split the audio batch before transcription or VAD."
+        )
+    return waveform[0].detach().float().mean(dim=0).cpu().numpy()
+
+
 def _slice_audio(audio, segments):
     """Return a new AUDIO dict holding the concatenation of [start, end)
     segments (seconds). Samples are referenced, not resampled."""
@@ -72,7 +84,6 @@ def _slice_audio(audio, segments):
         if e > s:
             pieces.append(waveform[..., s:e])
     if not pieces:
-        length = 0
         cat = torch.zeros(tuple(waveform.shape[:-1]) + (0,),
                           dtype=waveform.dtype, device=waveform.device)
     else:
@@ -105,11 +116,22 @@ def _parse_segments(segments_json) -> list:
                     "Segments is not valid JSON. Expected e.g. [[0.0, 2.1], [3.2, 5.0]], "
                     "got: {!r}".format(str(segments_json)[:200])
                 ) from e
+    if not isinstance(raw, (list, tuple)):
+        raise ValueError("Segments must be a JSON list of [start, end] pairs.")
     segments = []
-    for item in raw:
+    for index, item in enumerate(raw):
         if isinstance(item, dict):
             item = [item.get("start"), item.get("end")]
-        start, end = float(item[0]), float(item[1])
+        try:
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                raise ValueError("expected two values")
+            if any(isinstance(v, bool) or not isinstance(v, (int, float, str)) for v in item):
+                raise ValueError("expected numbers")
+            start, end = float(item[0]), float(item[1])
+            if not math.isfinite(start) or not math.isfinite(end):
+                raise ValueError("expected finite numbers")
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Segment {} must contain two finite numbers: [start, end].".format(index + 1)) from exc
         if end > start:
             segments.append([start, end])
     segments.sort()
@@ -148,10 +170,11 @@ class FunASRTranscribe:
 
     CATEGORY = "Optional Inputs/FunASR"
     DESCRIPTION = (
-        "Transcribe AUDIO into text with per-character timestamps (verbatim "
+        "Transcribe AUDIO into text with model-provided timestamps (verbatim "
         "transcript) using FunASR. Requires the optional 'funasr' package "
         "(pip install funasr). Models are downloaded automatically on first "
-        "use. A missing (None) audio passes through as missing."
+        "use. Requires batch size 1; timestamps depend on model support. "
+        "A missing (None) audio passes through as missing."
     )
 
     RETURN_TYPES = ("STRING", "STRING")
@@ -162,23 +185,16 @@ class FunASRTranscribe:
         if not has_value(audio):
             return ("", "[]")
 
+        samples = _mono_samples(audio)
+        if samples.size == 0:
+            return ("", "[]")
+
         kwargs = {"model": asr_model}
         if use_vad:
             kwargs["vad_model"] = "fsmn-vad"
         if use_punctuation:
             kwargs["punc_model"] = "ct-punc"
         model = _get_model(**kwargs)
-
-        # FunASR reads from a file or a numpy array (float, mono, any rate;
-        # its own resampling applies).  Feed the first batch item directly.
-        waveform = audio["waveform"]
-        import numpy as np
-
-        if waveform.ndim == 3:  # (batch, channels, samples)
-            waveform = waveform[0]
-        if waveform.ndim == 2:  # (channels, samples) -> mono 1D
-            waveform = waveform.mean(dim=0)
-        samples = waveform.cpu().numpy().astype(np.float32)
 
         try:
             results = model.generate(input=samples, fs=audio["sample_rate"])
@@ -225,7 +241,7 @@ class VADAutoTrimAudio:
         "as an editable JSON string ('[[start, end], ...]' in seconds), and "
         "the new total duration. Copy the segments string into Audio Trim "
         "by Segments to hand-edit and re-trim the original audio. Requires "
-        "the optional 'funasr' package (pip install funasr)."
+        "the optional 'funasr' package (pip install funasr) and batch size 1."
     )
 
     RETURN_TYPES = ("AUDIO", "STRING", "FLOAT")
@@ -236,15 +252,10 @@ class VADAutoTrimAudio:
         if not has_value(audio):
             return (None, "[]", 0.0)
 
+        samples = _mono_samples(audio)
+        if samples.size == 0:
+            return (audio, "[]", 0.0)
         model = _get_model(model=vad_model)
-
-        import numpy as np
-        waveform = audio["waveform"]
-        if waveform.ndim == 3:  # (batch, channels, samples)
-            waveform = waveform[0]
-        if waveform.ndim == 2:  # (channels, samples) -> mono 1D
-            waveform = waveform.mean(dim=0)
-        samples = waveform.cpu().numpy().astype(np.float32)
 
         try:
             results = model.generate(input=samples, fs=audio["sample_rate"])
@@ -253,15 +264,19 @@ class VADAutoTrimAudio:
 
         total = _audio_seconds(audio)
         raw_ms = results[0].get("value", []) if results else []
-        segments = [[s / 1000.0, e / 1000.0] for s, e in raw_ms]
+        segments = sorted([[s / 1000.0, e / 1000.0] for s, e in raw_ms])
         segments = [seg for seg in segments if seg[1] - seg[0] >= min_speech]
         segments = _merge_segments(segments, merge_gap)
         padded = [[max(0.0, s - padding), min(total, e + padding)]
                   for s, e in segments]
 
-        trimmed = _slice_audio(audio, padded)
+        padded = [seg for seg in padded if seg[1] > seg[0]]
+        # Padding can overlap even when the original speech intervals do not.
+        segments_json = _format_segments(_merge_segments(padded, 0.0))
+        # Slice the same rounded boundaries emitted for manual second-pass edits.
+        trimmed = _slice_audio(audio, _parse_segments(segments_json))
         duration = _audio_seconds(trimmed)
-        return (trimmed, _format_segments(padded), duration)
+        return (trimmed, segments_json, duration)
 
 
 class AudioTrimBySegments:

@@ -215,3 +215,58 @@ def test_trim_by_segments_invalid_json_raises_clear_error(trim_by_segments):
     audio = make_audio(seconds=1.0, sample_rate=1000)
     with pytest.raises(ValueError, match="not valid JSON"):
         trim_by_segments.trim("not json", audio=audio)
+
+
+@pytest.mark.parametrize("value", ['{}', 'null', '3', '[[null, 1]]', '[[true, 1]]', '[[0, "Infinity"]]', '[[0, NaN]]', '[[0]]', '[[0, 1, 2]]'])
+def test_parse_segments_reports_invalid_structure(funasr_module, value):
+    with pytest.raises(ValueError, match="[Ss]egment"):
+        funasr_module._parse_segments(value)
+
+
+def test_vad_padding_does_not_duplicate_overlapping_audio(vad_trim, funasr_stub):
+    funasr_stub["results"] = [{"value": [[1000, 2000], [2200, 3000]]}]
+    _, segments, duration = vad_trim.trim(0.3, 0, 0, "fsmn-vad", audio=make_audio())
+    assert json.loads(segments) == [[0.7, 3.3]]
+    assert duration == pytest.approx(2.6)
+
+
+def test_vad_output_segments_reproduce_identical_samples(vad_trim, trim_by_segments, funasr_stub):
+    funasr_stub["results"] = [{"value": [[123, 987]]}]
+    audio = make_audio(sample_rate=44100)
+    trimmed, segments, _ = vad_trim.trim(0.123456, 0, 0, "fsmn-vad", audio=audio)
+    retrimmed, _ = trim_by_segments.trim(segments, audio=audio)
+    assert torch.equal(trimmed["waveform"], retrimmed["waveform"])
+
+
+@pytest.mark.parametrize("node_name", ["FunASR Transcribe", "VAD Auto Trim Audio"])
+def test_empty_audio_does_not_load_models(plugin_nodes, funasr_module, monkeypatch, node_name):
+    def unexpected(**kwargs):
+        pytest.fail("empty audio must not load a model")
+    monkeypatch.setattr(funasr_module, "_get_model", unexpected)
+    audio = make_audio(seconds=0)
+    node = plugin_nodes[node_name]()
+    if node_name == "FunASR Transcribe":
+        assert node.transcribe("paraformer-zh", False, False, audio=audio) == ("", "[]")
+    else:
+        result = node.trim(0, 0, 0, "fsmn-vad", audio=audio)
+        assert result[0] is audio
+        assert result[1:] == ("[]", 0.0)
+
+
+@pytest.mark.parametrize("node_name", ["FunASR Transcribe", "VAD Auto Trim Audio"])
+def test_speech_nodes_reject_ambiguous_audio_batches(plugin_nodes, funasr_stub, node_name):
+    audio = make_audio()
+    audio["waveform"] = audio["waveform"].repeat(2, 1, 1)
+    node = plugin_nodes[node_name]()
+    with pytest.raises(ValueError, match="batch"):
+        if node_name == "FunASR Transcribe":
+            node.transcribe("paraformer-zh", False, False, audio=audio)
+        else:
+            node.trim(0, 0, 0, "fsmn-vad", audio=audio)
+
+
+def test_speech_input_accepts_bfloat16_and_detaches_gradients(transcribe, funasr_stub):
+    audio = make_audio()
+    audio["waveform"] = audio["waveform"].to(torch.bfloat16).requires_grad_()
+    funasr_stub["results"] = [{"text": "test"}]
+    assert transcribe.transcribe("paraformer-zh", False, False, audio=audio)[0] == "test"
