@@ -90,7 +90,8 @@ Lazy Latent Switch.latent      → KSampler.latent_image
 
 - `txt2img_img2img.json` —— UI 格式，可直接拖入 ComfyUI 画布。
 - `txt2img_img2img_api.json` —— API 格式，用于 `/prompt` 提交。
-- `minimax_h3_continue.json` / `minimax_h3_continue_api.json` —— MiniMax H3 **续写**：把上一段视频的尾巴（画面和声音）用 `MiniMaxH3AddGuide` 锚在第 0 帧，模型接着往下拍。分段生成长视频时每段跑一次；尾巴用 5 / 22 / 39 帧（17k+5），`length` 也在这个网格上，默认 243 帧约 10 秒。全部是 ComfyUI 自带的节点，要先装好 H3 的模型。锚定是软约束：开头那几帧和尾巴很像但不完全相同，拼接时要去掉这段重叠。
+- `minimax_h3_open.json` / `minimax_h3_continue.json`:任意时长视频。第一段从文字出,续写把上一段尾巴锚在第 0 帧。Mosael 的「任意长度的连续视频」把它们串起来。
+- `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`:任意时长数字人。人物照片做参考,`VRGDG_MiniMaxH3AudioDrive` 用这一段配音驱动口型,续写再接上一段尾巴。Mosael 的「任意时长的数字人」把它们串起来。一段 107 帧,模型名按自己机器上的改。
 - `optional_image_basic_api.json` —— 最小化的 `Optional Image` / `Has Image` /
   `Lazy Image Switch` 演示。
 
