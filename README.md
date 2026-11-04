@@ -100,6 +100,7 @@ Ready-made workflows are in [`examples/`](examples/):
 
 - `txt2img_img2img.json` — UI format, load it straight into the ComfyUI canvas.
 - `txt2img_img2img_api.json` — API format for `/prompt` submissions.
+- `minimax_h3_continue.json` / `minimax_h3_continue_api.json` — MiniMax H3 **continuation**: anchors the tail of the previous clip (picture and sound) at frame 0 with `MiniMaxH3AddGuide`, and the model carries on from there. Run it once per segment to build a long video. Use a 5 / 22 / 39 frame tail (17k + 5); `length` is on the same grid, 243 frames (about 10 s) by default. Stock ComfyUI nodes only, and the H3 models must be installed. The anchor is soft: the first frames closely match the tail but aren't identical, so drop that overlap when joining.
 - `optional_image_basic_api.json` — minimal `Optional Image` / `Has Image` /
   `Lazy Image Switch` demo.
 

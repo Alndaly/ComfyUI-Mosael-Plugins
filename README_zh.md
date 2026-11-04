@@ -90,6 +90,7 @@ Lazy Latent Switch.latent      → KSampler.latent_image
 
 - `txt2img_img2img.json` —— UI 格式，可直接拖入 ComfyUI 画布。
 - `txt2img_img2img_api.json` —— API 格式，用于 `/prompt` 提交。
+- `minimax_h3_continue.json` / `minimax_h3_continue_api.json` —— MiniMax H3 **续写**：把上一段视频的尾巴（画面和声音）用 `MiniMaxH3AddGuide` 锚在第 0 帧，模型接着往下拍。分段生成长视频时每段跑一次；尾巴用 5 / 22 / 39 帧（17k+5），`length` 也在这个网格上，默认 243 帧约 10 秒。全部是 ComfyUI 自带的节点，要先装好 H3 的模型。锚定是软约束：开头那几帧和尾巴很像但不完全相同，拼接时要去掉这段重叠。
 - `optional_image_basic_api.json` —— 最小化的 `Optional Image` / `Has Image` /
   `Lazy Image Switch` 演示。
 
