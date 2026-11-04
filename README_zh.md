@@ -90,8 +90,8 @@ Lazy Latent Switch.latent      → KSampler.latent_image
 
 - `txt2img_img2img.json` —— UI 格式，可直接拖入 ComfyUI 画布。
 - `txt2img_img2img_api.json` —— API 格式，用于 `/prompt` 提交。
-- `minimax_h3_open.json` / `minimax_h3_continue.json`:任意时长视频。第一段从文字出,续写把上一段尾巴锚在第 0 帧。Mosael 的「任意长度的连续视频」把它们串起来。
-- `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`:任意时长数字人。人物照片做参考,`VRGDG_MiniMaxH3AudioDrive` 用这一段配音驱动口型,续写再接上一段尾巴。Mosael 的「任意时长的数字人」把它们串起来。一段 107 帧,模型名按自己机器上的改。
+- `minimax_h3_open.json` / `minimax_h3_continue.json`:任意时长视频。第一段从文字出,两遍采样(864×480 定动作,潜空间放大 2 倍再补细节),续写直接读上一段存下的潜空间,不解码不重新编码。Mosael 的「任意长度的连续视频」把它们串起来。
+- `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`:任意时长数字人。人物照片做参考,`VRGDG_MiniMaxH3AudioDrive` 用这一段配音驱动口型,续写同样读上一段的潜空间。Mosael 的「任意时长的数字人」把它们串起来。一段 243 帧,模型名按自己机器上的改。
 - `optional_image_basic_api.json` —— 最小化的 `Optional Image` / `Has Image` /
   `Lazy Image Switch` 演示。
 

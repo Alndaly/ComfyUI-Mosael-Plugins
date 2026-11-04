@@ -100,8 +100,8 @@ Ready-made workflows are in [`examples/`](examples/):
 
 - `txt2img_img2img.json` — UI format, load it straight into the ComfyUI canvas.
 - `txt2img_img2img_api.json` — API format for `/prompt` submissions.
-- `minimax_h3_open.json` / `minimax_h3_continue.json`: video of any length. The first segment comes from text; the continuation anchors the previous tail at frame 0. Mosael's "Continuous video of any length" chains them.
-- `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`: a digital human of any length. The portrait is the reference, `VRGDG_MiniMaxH3AudioDrive` drives the lips from this segment's voice, and the continuation also takes the previous tail. Mosael's "Digital human of any length" chains them. One segment is 107 frames; change the model names to match your machine.
+- `minimax_h3_open.json` / `minimax_h3_continue.json`: video of any length. The first segment comes from text; two sampling passes (864×480 for motion, a 2× latent upscale, then a low-noise detail pass); the continuation reads the previous segment's saved latent with no decode or re-encode. Mosael's "Continuous video of any length" chains them.
+- `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`: a digital human of any length. The portrait is the reference, `VRGDG_MiniMaxH3AudioDrive` drives the lips from this segment's voice, and the continuation also reads the previous saved latent. Mosael's "Digital human of any length" chains them. One segment is 243 frames; change the model names to match your machine.
 - `optional_image_basic_api.json` — minimal `Optional Image` / `Has Image` /
   `Lazy Image Switch` demo.
 
