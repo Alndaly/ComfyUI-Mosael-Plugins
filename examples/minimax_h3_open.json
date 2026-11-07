@@ -24,9 +24,9 @@
      "links": [
       3,
       4,
-      12,
-      14,
-      18
+      11,
+      13,
+      17
      ],
      "slot_index": 0
     }
@@ -172,7 +172,7 @@
      "type": "CONDITIONING",
      "links": [
       5,
-      17
+      16
      ],
      "slot_index": 0
     },
@@ -249,7 +249,7 @@
      "type": "SAMPLER",
      "links": [
       8,
-      22
+      21
      ],
      "slot_index": 0
     }
@@ -388,7 +388,7 @@
      "name": "output",
      "type": "LATENT",
      "links": [
-      11
+      12
      ],
      "slot_index": 0
     },
@@ -405,8 +405,8 @@
    "widgets_values": []
   },
   {
-   "id": 52,
-   "type": "VRGDG_MiniMaxH3SaveLatent",
+   "id": 70,
+   "type": "MiniMaxH3Pass2StaggeredScheduler",
    "pos": [
     1320,
     340
@@ -420,58 +420,9 @@
    "mode": 0,
    "inputs": [
     {
-     "name": "latent",
-     "type": "LATENT",
-     "link": 11
-    }
-   ],
-   "outputs": [
-    {
-     "name": "latent",
-     "type": "LATENT",
-     "links": [
-      13
-     ],
-     "slot_index": 0
-    },
-    {
-     "name": "saved_path",
-     "type": "STRING",
-     "links": [],
-     "slot_index": 1
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "VRGDG_MiniMaxH3SaveLatent"
-   },
-   "widgets_values": [
-    "mosael/latents",
-    1,
-    0,
-    24.0,
-    -1
-   ],
-   "title": "存下这一段的潜空间 / Keep this latent"
-  },
-  {
-   "id": 70,
-   "type": "MiniMaxH3Pass2StaggeredScheduler",
-   "pos": [
-    1640,
-    340
-   ],
-   "size": [
-    300,
-    120
-   ],
-   "flags": {},
-   "order": 11,
-   "mode": 0,
-   "inputs": [
-    {
      "name": "model",
      "type": "MODEL",
-     "link": 12
+     "link": 11
     }
    ],
    "outputs": [
@@ -479,8 +430,8 @@
      "name": "SIGMAS",
      "type": "SIGMAS",
      "links": [
-      16,
-      23
+      15,
+      22
      ],
      "slot_index": 0
     }
@@ -501,15 +452,15 @@
    "id": 71,
    "type": "RandomNoise",
    "pos": [
-    40,
-    640
+    1640,
+    340
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 12,
+   "order": 11,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -517,7 +468,7 @@
      "name": "NOISE",
      "type": "NOISE",
      "links": [
-      15
+      14
      ],
      "slot_index": 0
     }
@@ -534,7 +485,7 @@
    "id": 72,
    "type": "MiniMaxH3LatentUpscaleCombined",
    "pos": [
-    360,
+    40,
     640
    ],
    "size": [
@@ -542,33 +493,33 @@
     120
    ],
    "flags": {},
-   "order": 13,
+   "order": 12,
    "mode": 0,
    "inputs": [
     {
      "name": "samples",
      "type": "LATENT",
-     "link": 13
+     "link": 12
     },
     {
      "name": "model",
      "type": "MODEL",
-     "link": 14
+     "link": 13
     },
     {
      "name": "noise",
      "type": "NOISE",
-     "link": 15
+     "link": 14
     },
     {
      "name": "sigmas",
      "type": "SIGMAS",
-     "link": 16
+     "link": 15
     },
     {
      "name": "positive",
      "type": "CONDITIONING",
-     "link": 17
+     "link": 16
     }
    ],
    "outputs": [
@@ -576,7 +527,7 @@
      "name": "latent",
      "type": "LATENT",
      "links": [
-      24
+      23
      ],
      "slot_index": 0
     },
@@ -584,7 +535,7 @@
      "name": "positive",
      "type": "CONDITIONING",
      "links": [
-      19
+      18
      ],
      "slot_index": 1
     },
@@ -610,7 +561,7 @@
    "id": 73,
    "type": "BasicGuider",
    "pos": [
-    680,
+    360,
     640
    ],
    "size": [
@@ -618,18 +569,18 @@
     120
    ],
    "flags": {},
-   "order": 14,
+   "order": 13,
    "mode": 0,
    "inputs": [
     {
      "name": "model",
      "type": "MODEL",
-     "link": 18
+     "link": 17
     },
     {
      "name": "conditioning",
      "type": "CONDITIONING",
-     "link": 19
+     "link": 18
     }
    ],
    "outputs": [
@@ -637,7 +588,7 @@
      "name": "GUIDER",
      "type": "GUIDER",
      "links": [
-      21
+      20
      ],
      "slot_index": 0
     }
@@ -651,7 +602,7 @@
    "id": 75,
    "type": "DisableNoise",
    "pos": [
-    1000,
+    680,
     640
    ],
    "size": [
@@ -659,7 +610,7 @@
     120
    ],
    "flags": {},
-   "order": 15,
+   "order": 14,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -667,7 +618,7 @@
      "name": "NOISE",
      "type": "NOISE",
      "links": [
-      20
+      19
      ],
      "slot_index": 0
     }
@@ -681,7 +632,7 @@
    "id": 74,
    "type": "SamplerCustomAdvanced",
    "pos": [
-    1320,
+    1000,
     640
    ],
    "size": [
@@ -689,33 +640,33 @@
     120
    ],
    "flags": {},
-   "order": 16,
+   "order": 15,
    "mode": 0,
    "inputs": [
     {
      "name": "noise",
      "type": "NOISE",
-     "link": 20
+     "link": 19
     },
     {
      "name": "guider",
      "type": "GUIDER",
-     "link": 21
+     "link": 20
     },
     {
      "name": "sampler",
      "type": "SAMPLER",
-     "link": 22
+     "link": 21
     },
     {
      "name": "sigmas",
      "type": "SIGMAS",
-     "link": 23
+     "link": 22
     },
     {
      "name": "latent_image",
      "type": "LATENT",
-     "link": 24
+     "link": 23
     }
    ],
    "outputs": [
@@ -723,8 +674,7 @@
      "name": "output",
      "type": "LATENT",
      "links": [
-      25,
-      28
+      24
      ],
      "slot_index": 0
     },
@@ -739,6 +689,56 @@
     "Node name for S&R": "SamplerCustomAdvanced"
    },
    "widgets_values": []
+  },
+  {
+   "id": 52,
+   "type": "VRGDG_MiniMaxH3SaveLatent",
+   "pos": [
+    1320,
+    640
+   ],
+   "size": [
+    300,
+    120
+   ],
+   "flags": {},
+   "order": 16,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "latent",
+     "type": "LATENT",
+     "link": 24
+    }
+   ],
+   "outputs": [
+    {
+     "name": "latent",
+     "type": "LATENT",
+     "links": [
+      25,
+      28
+     ],
+     "slot_index": 0
+    },
+    {
+     "name": "saved_path",
+     "type": "STRING",
+     "links": [],
+     "slot_index": 1
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VRGDG_MiniMaxH3SaveLatent"
+   },
+   "widgets_values": [
+    "mosael/latents",
+    1,
+    0,
+    24.0,
+    -1
+   ],
+   "title": "存下这一段的潜空间 / Keep this latent"
   },
   {
    "id": 14,
@@ -1031,14 +1031,6 @@
   ],
   [
    11,
-   13,
-   0,
-   52,
-   0,
-   "LATENT"
-  ],
-  [
-   12,
    3,
    0,
    70,
@@ -1046,15 +1038,15 @@
    "MODEL"
   ],
   [
+   12,
    13,
-   52,
    0,
    72,
    0,
    "LATENT"
   ],
   [
-   14,
+   13,
    3,
    0,
    72,
@@ -1062,7 +1054,7 @@
    "MODEL"
   ],
   [
-   15,
+   14,
    71,
    0,
    72,
@@ -1070,7 +1062,7 @@
    "NOISE"
   ],
   [
-   16,
+   15,
    70,
    0,
    72,
@@ -1078,7 +1070,7 @@
    "SIGMAS"
   ],
   [
-   17,
+   16,
    7,
    0,
    72,
@@ -1086,7 +1078,7 @@
    "CONDITIONING"
   ],
   [
-   18,
+   17,
    3,
    0,
    73,
@@ -1094,7 +1086,7 @@
    "MODEL"
   ],
   [
-   19,
+   18,
    72,
    1,
    73,
@@ -1102,7 +1094,7 @@
    "CONDITIONING"
   ],
   [
-   20,
+   19,
    75,
    0,
    74,
@@ -1110,7 +1102,7 @@
    "NOISE"
   ],
   [
-   21,
+   20,
    73,
    0,
    74,
@@ -1118,7 +1110,7 @@
    "GUIDER"
   ],
   [
-   22,
+   21,
    11,
    0,
    74,
@@ -1126,7 +1118,7 @@
    "SAMPLER"
   ],
   [
-   23,
+   22,
    70,
    0,
    74,
@@ -1134,7 +1126,7 @@
    "SIGMAS"
   ],
   [
-   24,
+   23,
    72,
    0,
    74,
@@ -1142,8 +1134,16 @@
    "LATENT"
   ],
   [
-   25,
+   24,
    74,
+   0,
+   52,
+   0,
+   "LATENT"
+  ],
+  [
+   25,
+   52,
    0,
    14,
    0,
@@ -1167,7 +1167,7 @@
   ],
   [
    28,
-   74,
+   52,
    0,
    15,
    0,
