@@ -1,6 +1,6 @@
 {
  "last_node_id": 75,
- "last_link_id": 31,
+ "last_link_id": 36,
  "nodes": [
   {
    "id": 3,
@@ -22,11 +22,7 @@
      "name": "MODEL",
      "type": "MODEL",
      "links": [
-      3,
-      4,
-      11,
-      13,
-      17
+      1
      ],
      "slot_index": 0
     }
@@ -40,10 +36,10 @@
    ]
   },
   {
-   "id": 4,
-   "type": "CLIPLoader",
+   "id": 30,
+   "type": "LoraLoaderModelOnly",
    "pos": [
-    360,
+    680,
     40
    ],
    "size": [
@@ -53,13 +49,215 @@
    "flags": {},
    "order": 1,
    "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 1
+    }
+   ],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      2
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "LoraLoaderModelOnly"
+   },
+   "widgets_values": [
+    "minimax_h3_fl2v_lightx2v_turbo_8step_v1.0_resized_avg_rank_24_bf16.safetensors",
+    1.0
+   ],
+   "title": "加速 LoRA / Turbo LoRA"
+  },
+  {
+   "id": 32,
+   "type": "MiniMaxChunkFeedForward",
+   "pos": [
+    1320,
+    40
+   ],
+   "size": [
+    300,
+    120
+   ],
+   "flags": {},
+   "order": 2,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 2
+    }
+   ],
+   "outputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "links": [
+      3,
+      6,
+      7
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "MiniMaxChunkFeedForward"
+   },
+   "widgets_values": [
+    2,
+    4096
+   ]
+  },
+  {
+   "id": 33,
+   "type": "BlockSparseAttention",
+   "pos": [
+    40,
+    340
+   ],
+   "size": [
+    300,
+    120
+   ],
+   "flags": {},
+   "order": 3,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 3
+    },
+    {
+     "name": "selection",
+     "type": "COMFY_DYNAMICCOMBO_V3",
+     "link": null,
+     "widget": {
+      "name": "selection"
+     }
+    },
+    {
+     "name": "selection.tau",
+     "type": "FLOAT",
+     "link": null,
+     "widget": {
+      "name": "selection.tau"
+     }
+    },
+    {
+     "name": "start_percent",
+     "type": "FLOAT",
+     "link": null,
+     "widget": {
+      "name": "start_percent"
+     }
+    },
+    {
+     "name": "end_percent",
+     "type": "FLOAT",
+     "link": null,
+     "widget": {
+      "name": "end_percent"
+     }
+    },
+    {
+     "name": "dense_blocks",
+     "type": "STRING",
+     "link": null,
+     "widget": {
+      "name": "dense_blocks"
+     }
+    },
+    {
+     "name": "min_tokens",
+     "type": "INT",
+     "link": null,
+     "widget": {
+      "name": "min_tokens"
+     }
+    },
+    {
+     "name": "extra_tokens",
+     "type": "INT",
+     "link": null,
+     "widget": {
+      "name": "extra_tokens"
+     }
+    },
+    {
+     "name": "sink_conditioning",
+     "type": "COMBO",
+     "link": null,
+     "widget": {
+      "name": "sink_conditioning"
+     }
+    },
+    {
+     "name": "verbose",
+     "type": "BOOLEAN",
+     "link": null,
+     "widget": {
+      "name": "verbose"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      14,
+      16,
+      20
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "BlockSparseAttention"
+   },
+   "widgets_values": [
+    "sol-attn",
+    1.3,
+    0.0,
+    1.0,
+    "",
+    12288,
+    256,
+    "exact_kv_and_rows",
+    false
+   ],
+   "title": "第二遍稀疏注意力 / Sparse attention (pass 2)"
+  },
+  {
+   "id": 4,
+   "type": "CLIPLoader",
+   "pos": [
+    680,
+    340
+   ],
+   "size": [
+    300,
+    120
+   ],
+   "flags": {},
+   "order": 4,
+   "mode": 0,
    "inputs": [],
    "outputs": [
     {
      "name": "CLIP",
      "type": "CLIP",
      "links": [
-      1
+      4
      ],
      "slot_index": 0
     }
@@ -77,15 +275,15 @@
    "id": 5,
    "type": "VAELoader",
    "pos": [
-    680,
-    40
+    1320,
+    340
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 2,
+   "order": 5,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -93,8 +291,8 @@
      "name": "VAE",
      "type": "VAE",
      "links": [
-      2,
-      26
+      5,
+      30
      ],
      "slot_index": 0
     }
@@ -111,15 +309,15 @@
    "id": 6,
    "type": "VAELoader",
    "pos": [
-    1000,
-    40
+    40,
+    640
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 3,
+   "order": 6,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -127,7 +325,7 @@
      "name": "VAE",
      "type": "VAE",
      "links": [
-      29
+      34
      ],
      "slot_index": 0
     }
@@ -144,26 +342,26 @@
    "id": 7,
    "type": "MiniMaxH3ImageToVideo",
    "pos": [
-    1320,
-    40
+    680,
+    640
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 4,
+   "order": 7,
    "mode": 0,
    "inputs": [
     {
      "name": "clip",
      "type": "CLIP",
-     "link": 1
+     "link": 4
     },
     {
      "name": "vae",
      "type": "VAE",
-     "link": 2
+     "link": 5
     }
    ],
    "outputs": [
@@ -171,8 +369,8 @@
      "name": "positive",
      "type": "CONDITIONING",
      "links": [
-      5,
-      16
+      8,
+      19
      ],
      "slot_index": 0
     },
@@ -180,7 +378,7 @@
      "name": "LATENT",
      "type": "LATENT",
      "links": [
-      10
+      13
      ],
      "slot_index": 1
     }
@@ -189,7 +387,7 @@
     "Node name for S&R": "MiniMaxH3ImageToVideo"
    },
    "widgets_values": [
-    "Photorealistic documentary footage, real skin with pores and fine hair, natural micro-expressions, eye blinks, subtle breathing. Natural available light, realistic film grain, no beauty filter, no plastic skin, no CGI look. One continuous shot, no cut.",
+    "Photorealistic documentary footage, real skin with pores and fine hair, natural micro-expressions, eye blinks, subtle breathing, slight head movement. Natural available light, realistic film grain, no beauty filter, no plastic skin, no CGI look. One continuous shot, no cut.",
     864,
     480,
     243
@@ -199,15 +397,15 @@
    "id": 10,
    "type": "RandomNoise",
    "pos": [
-    1640,
-    40
+    1320,
+    640
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 5,
+   "order": 8,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -215,7 +413,7 @@
      "name": "NOISE",
      "type": "NOISE",
      "links": [
-      6
+      9
      ],
      "slot_index": 0
     }
@@ -233,14 +431,14 @@
    "type": "KSamplerSelect",
    "pos": [
     40,
-    340
+    940
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 6,
+   "order": 9,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -248,8 +446,8 @@
      "name": "SAMPLER",
      "type": "SAMPLER",
      "links": [
-      8,
-      21
+      11,
+      24
      ],
      "slot_index": 0
     }
@@ -265,21 +463,21 @@
    "id": 12,
    "type": "BasicScheduler",
    "pos": [
-    360,
-    340
+    680,
+    940
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 7,
+   "order": 10,
    "mode": 0,
    "inputs": [
     {
      "name": "model",
      "type": "MODEL",
-     "link": 3
+     "link": 6
     }
    ],
    "outputs": [
@@ -287,7 +485,7 @@
      "name": "SIGMAS",
      "type": "SIGMAS",
      "links": [
-      9
+      12
      ],
      "slot_index": 0
     }
@@ -305,26 +503,26 @@
    "id": 9,
    "type": "BasicGuider",
    "pos": [
-    680,
-    340
+    1320,
+    940
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 8,
+   "order": 11,
    "mode": 0,
    "inputs": [
     {
      "name": "model",
      "type": "MODEL",
-     "link": 4
+     "link": 7
     },
     {
      "name": "conditioning",
      "type": "CONDITIONING",
-     "link": 5
+     "link": 8
     }
    ],
    "outputs": [
@@ -332,7 +530,7 @@
      "name": "GUIDER",
      "type": "GUIDER",
      "links": [
-      7
+      10
      ],
      "slot_index": 0
     }
@@ -346,41 +544,41 @@
    "id": 13,
    "type": "SamplerCustomAdvanced",
    "pos": [
-    1000,
-    340
+    40,
+    1240
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 9,
+   "order": 12,
    "mode": 0,
    "inputs": [
     {
      "name": "noise",
      "type": "NOISE",
-     "link": 6
+     "link": 9
     },
     {
      "name": "guider",
      "type": "GUIDER",
-     "link": 7
+     "link": 10
     },
     {
      "name": "sampler",
      "type": "SAMPLER",
-     "link": 8
+     "link": 11
     },
     {
      "name": "sigmas",
      "type": "SIGMAS",
-     "link": 9
+     "link": 12
     },
     {
      "name": "latent_image",
      "type": "LATENT",
-     "link": 10
+     "link": 13
     }
    ],
    "outputs": [
@@ -388,7 +586,7 @@
      "name": "output",
      "type": "LATENT",
      "links": [
-      12
+      15
      ],
      "slot_index": 0
     },
@@ -408,21 +606,21 @@
    "id": 70,
    "type": "MiniMaxH3Pass2StaggeredScheduler",
    "pos": [
-    1320,
-    340
+    680,
+    1240
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 10,
+   "order": 13,
    "mode": 0,
    "inputs": [
     {
      "name": "model",
      "type": "MODEL",
-     "link": 11
+     "link": 14
     }
    ],
    "outputs": [
@@ -430,8 +628,8 @@
      "name": "SIGMAS",
      "type": "SIGMAS",
      "links": [
-      15,
-      22
+      18,
+      25
      ],
      "slot_index": 0
     }
@@ -452,15 +650,15 @@
    "id": 71,
    "type": "RandomNoise",
    "pos": [
-    1640,
-    340
+    1320,
+    1240
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 11,
+   "order": 14,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -468,7 +666,7 @@
      "name": "NOISE",
      "type": "NOISE",
      "links": [
-      14
+      17
      ],
      "slot_index": 0
     }
@@ -486,40 +684,40 @@
    "type": "MiniMaxH3LatentUpscaleCombined",
    "pos": [
     40,
-    640
+    1540
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 12,
+   "order": 15,
    "mode": 0,
    "inputs": [
     {
      "name": "samples",
      "type": "LATENT",
-     "link": 12
+     "link": 15
     },
     {
      "name": "model",
      "type": "MODEL",
-     "link": 13
+     "link": 16
     },
     {
      "name": "noise",
      "type": "NOISE",
-     "link": 14
+     "link": 17
     },
     {
      "name": "sigmas",
      "type": "SIGMAS",
-     "link": 15
+     "link": 18
     },
     {
      "name": "positive",
      "type": "CONDITIONING",
-     "link": 16
+     "link": 19
     }
    ],
    "outputs": [
@@ -527,7 +725,7 @@
      "name": "latent",
      "type": "LATENT",
      "links": [
-      23
+      26
      ],
      "slot_index": 0
     },
@@ -535,7 +733,7 @@
      "name": "positive",
      "type": "CONDITIONING",
      "links": [
-      18
+      21
      ],
      "slot_index": 1
     },
@@ -561,26 +759,26 @@
    "id": 73,
    "type": "BasicGuider",
    "pos": [
-    360,
-    640
+    680,
+    1540
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 13,
+   "order": 16,
    "mode": 0,
    "inputs": [
     {
      "name": "model",
      "type": "MODEL",
-     "link": 17
+     "link": 20
     },
     {
      "name": "conditioning",
      "type": "CONDITIONING",
-     "link": 18
+     "link": 21
     }
    ],
    "outputs": [
@@ -588,7 +786,7 @@
      "name": "GUIDER",
      "type": "GUIDER",
      "links": [
-      20
+      23
      ],
      "slot_index": 0
     }
@@ -602,15 +800,15 @@
    "id": 75,
    "type": "DisableNoise",
    "pos": [
-    680,
-    640
+    1320,
+    1540
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 14,
+   "order": 17,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -618,7 +816,7 @@
      "name": "NOISE",
      "type": "NOISE",
      "links": [
-      19
+      22
      ],
      "slot_index": 0
     }
@@ -632,41 +830,41 @@
    "id": 74,
    "type": "SamplerCustomAdvanced",
    "pos": [
-    1000,
-    640
+    40,
+    1840
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 15,
+   "order": 18,
    "mode": 0,
    "inputs": [
     {
      "name": "noise",
      "type": "NOISE",
-     "link": 19
+     "link": 22
     },
     {
      "name": "guider",
      "type": "GUIDER",
-     "link": 20
+     "link": 23
     },
     {
      "name": "sampler",
      "type": "SAMPLER",
-     "link": 21
+     "link": 24
     },
     {
      "name": "sigmas",
      "type": "SIGMAS",
-     "link": 22
+     "link": 25
     },
     {
      "name": "latent_image",
      "type": "LATENT",
-     "link": 23
+     "link": 26
     }
    ],
    "outputs": [
@@ -674,7 +872,7 @@
      "name": "output",
      "type": "LATENT",
      "links": [
-      24
+      27
      ],
      "slot_index": 0
     },
@@ -694,21 +892,21 @@
    "id": 52,
    "type": "VRGDG_MiniMaxH3SaveLatent",
    "pos": [
-    1320,
-    640
+    680,
+    1840
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 16,
+   "order": 19,
    "mode": 0,
    "inputs": [
     {
      "name": "latent",
      "type": "LATENT",
-     "link": 24
+     "link": 27
     }
    ],
    "outputs": [
@@ -716,7 +914,6 @@
      "name": "latent",
      "type": "LATENT",
      "links": [
-      25,
       28
      ],
      "slot_index": 0
@@ -741,29 +938,70 @@
    "title": "存下这一段的潜空间 / Keep this latent"
   },
   {
-   "id": 14,
-   "type": "VAEDecode",
+   "id": 60,
+   "type": "VRAMCleanup",
    "pos": [
-    1640,
-    640
+    1320,
+    1840
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 17,
+   "order": 20,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "anything",
+     "type": "*",
+     "link": 28
+    }
+   ],
+   "outputs": [
+    {
+     "name": "output",
+     "type": "*",
+     "links": [
+      29,
+      33
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VRAMCleanup"
+   },
+   "widgets_values": [
+    true,
+    true
+   ],
+   "title": "腾出显存 / Free VRAM"
+  },
+  {
+   "id": 14,
+   "type": "VAEDecode",
+   "pos": [
+    40,
+    2140
+   ],
+   "size": [
+    300,
+    120
+   ],
+   "flags": {},
+   "order": 21,
    "mode": 0,
    "inputs": [
     {
      "name": "samples",
      "type": "LATENT",
-     "link": 25
+     "link": 29
     },
     {
      "name": "vae",
      "type": "VAE",
-     "link": 26
+     "link": 30
     }
    ],
    "outputs": [
@@ -771,7 +1009,7 @@
      "name": "IMAGE",
      "type": "IMAGE",
      "links": [
-      27
+      31
      ],
      "slot_index": 0
     }
@@ -782,29 +1020,71 @@
    "widgets_values": []
   },
   {
-   "id": 16,
-   "type": "CreateVideo",
+   "id": 61,
+   "type": "RAMCleanup",
    "pos": [
-    40,
-    940
+    680,
+    2140
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 18,
+   "order": 22,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "anything",
+     "type": "*",
+     "link": 31
+    }
+   ],
+   "outputs": [
+    {
+     "name": "output",
+     "type": "*",
+     "links": [
+      32
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "RAMCleanup"
+   },
+   "widgets_values": [
+    true,
+    true,
+    true,
+    3
+   ],
+   "title": "腾出内存 / Free RAM"
+  },
+  {
+   "id": 16,
+   "type": "CreateVideo",
+   "pos": [
+    1320,
+    2140
+   ],
+   "size": [
+    300,
+    120
+   ],
+   "flags": {},
+   "order": 23,
    "mode": 0,
    "inputs": [
     {
      "name": "images",
      "type": "IMAGE",
-     "link": 27
+     "link": 32
     },
     {
      "name": "audio",
      "type": "AUDIO",
-     "link": 30
+     "link": 35
     },
     {
      "name": "fps",
@@ -844,7 +1124,7 @@
      "name": "VIDEO",
      "type": "VIDEO",
      "links": [
-      31
+      36
      ],
      "slot_index": 0
     }
@@ -863,26 +1143,26 @@
    "id": 15,
    "type": "VAEDecodeAudio",
    "pos": [
-    360,
-    940
+    40,
+    2440
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 19,
+   "order": 24,
    "mode": 0,
    "inputs": [
     {
      "name": "samples",
      "type": "LATENT",
-     "link": 28
+     "link": 33
     },
     {
      "name": "vae",
      "type": "VAE",
-     "link": 29
+     "link": 34
     }
    ],
    "outputs": [
@@ -890,7 +1170,7 @@
      "name": "AUDIO",
      "type": "AUDIO",
      "links": [
-      30
+      35
      ],
      "slot_index": 0
     }
@@ -905,20 +1185,20 @@
    "type": "SaveVideo",
    "pos": [
     680,
-    940
+    2440
    ],
    "size": [
     300,
     120
    ],
    "flags": {},
-   "order": 20,
+   "order": 25,
    "mode": 0,
    "inputs": [
     {
      "name": "video",
      "type": "VIDEO",
-     "link": 31
+     "link": 36
     },
     {
      "name": "filename_prefix",
@@ -951,6 +1231,30 @@
  "links": [
   [
    1,
+   3,
+   0,
+   30,
+   0,
+   "MODEL"
+  ],
+  [
+   2,
+   30,
+   0,
+   32,
+   0,
+   "MODEL"
+  ],
+  [
+   3,
+   32,
+   0,
+   33,
+   0,
+   "MODEL"
+  ],
+  [
+   4,
    4,
    0,
    7,
@@ -958,7 +1262,7 @@
    "CLIP"
   ],
   [
-   2,
+   5,
    5,
    0,
    7,
@@ -966,23 +1270,23 @@
    "VAE"
   ],
   [
-   3,
-   3,
+   6,
+   32,
    0,
    12,
    0,
    "MODEL"
   ],
   [
-   4,
-   3,
+   7,
+   32,
    0,
    9,
    0,
    "MODEL"
   ],
   [
-   5,
+   8,
    7,
    0,
    9,
@@ -990,7 +1294,7 @@
    "CONDITIONING"
   ],
   [
-   6,
+   9,
    10,
    0,
    13,
@@ -998,7 +1302,7 @@
    "NOISE"
   ],
   [
-   7,
+   10,
    9,
    0,
    13,
@@ -1006,7 +1310,7 @@
    "GUIDER"
   ],
   [
-   8,
+   11,
    11,
    0,
    13,
@@ -1014,7 +1318,7 @@
    "SAMPLER"
   ],
   [
-   9,
+   12,
    12,
    0,
    13,
@@ -1022,7 +1326,7 @@
    "SIGMAS"
   ],
   [
-   10,
+   13,
    7,
    1,
    13,
@@ -1030,15 +1334,15 @@
    "LATENT"
   ],
   [
-   11,
-   3,
+   14,
+   33,
    0,
    70,
    0,
    "MODEL"
   ],
   [
-   12,
+   15,
    13,
    0,
    72,
@@ -1046,15 +1350,15 @@
    "LATENT"
   ],
   [
-   13,
-   3,
+   16,
+   33,
    0,
    72,
    1,
    "MODEL"
   ],
   [
-   14,
+   17,
    71,
    0,
    72,
@@ -1062,7 +1366,7 @@
    "NOISE"
   ],
   [
-   15,
+   18,
    70,
    0,
    72,
@@ -1070,7 +1374,7 @@
    "SIGMAS"
   ],
   [
-   16,
+   19,
    7,
    0,
    72,
@@ -1078,15 +1382,15 @@
    "CONDITIONING"
   ],
   [
-   17,
-   3,
+   20,
+   33,
    0,
    73,
    0,
    "MODEL"
   ],
   [
-   18,
+   21,
    72,
    1,
    73,
@@ -1094,7 +1398,7 @@
    "CONDITIONING"
   ],
   [
-   19,
+   22,
    75,
    0,
    74,
@@ -1102,7 +1406,7 @@
    "NOISE"
   ],
   [
-   20,
+   23,
    73,
    0,
    74,
@@ -1110,7 +1414,7 @@
    "GUIDER"
   ],
   [
-   21,
+   24,
    11,
    0,
    74,
@@ -1118,7 +1422,7 @@
    "SAMPLER"
   ],
   [
-   22,
+   25,
    70,
    0,
    74,
@@ -1126,7 +1430,7 @@
    "SIGMAS"
   ],
   [
-   23,
+   26,
    72,
    0,
    74,
@@ -1134,7 +1438,7 @@
    "LATENT"
   ],
   [
-   24,
+   27,
    74,
    0,
    52,
@@ -1142,15 +1446,23 @@
    "LATENT"
   ],
   [
-   25,
+   28,
    52,
+   0,
+   60,
+   0,
+   "*"
+  ],
+  [
+   29,
+   60,
    0,
    14,
    0,
    "LATENT"
   ],
   [
-   26,
+   30,
    5,
    0,
    14,
@@ -1158,23 +1470,31 @@
    "VAE"
   ],
   [
-   27,
+   31,
    14,
+   0,
+   61,
+   0,
+   "*"
+  ],
+  [
+   32,
+   61,
    0,
    16,
    0,
    "IMAGE"
   ],
   [
-   28,
-   52,
+   33,
+   60,
    0,
    15,
    0,
    "LATENT"
   ],
   [
-   29,
+   34,
    6,
    0,
    15,
@@ -1182,7 +1502,7 @@
    "VAE"
   ],
   [
-   30,
+   35,
    15,
    0,
    16,
@@ -1190,7 +1510,7 @@
    "AUDIO"
   ],
   [
-   31,
+   36,
    16,
    0,
    17,

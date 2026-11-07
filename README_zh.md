@@ -92,6 +92,8 @@ Lazy Latent Switch.latent      → KSampler.latent_image
 - `txt2img_img2img_api.json` —— API 格式，用于 `/prompt` 提交。
 - `minimax_h3_open.json` / `minimax_h3_continue.json`:任意时长视频。第一段从文字出,两遍采样(864×480 定动作,潜空间放大 2 倍再补细节),每段存下第二遍的高清潜空间,续写的两遍都接它:第二遍原样锁住重叠帧,第一遍接解码缩小后的画面,接缝看不出来。Mosael 的「任意长度的连续视频」把它们串起来。
 - `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`:任意时长数字人。人物照片做参考,`VRGDG_MiniMaxH3AudioDrive` 用这一段配音驱动口型,续写同样读上一段的潜空间。Mosael 的「任意时长的数字人」把它们串起来。一段 243 帧,模型名按自己机器上的改。
+- `seedvr2_upscale_batched.json`:SeedVR2 7B sharp 超分到 `6.width` × `6.height`(默认 2560×1440),用 VHS 分批(一批 61 帧),内存只占一批。Mosael 的长片和数字人模板配了它,就多一格「成片清晰度」(1080p / 2K / 4K),每段先超分再上时间线。
+- 四张 H3 工作流挂 lightx2v FL2V turbo 8 步 LoRA(`minimax_h3_fl2v_lightx2v_turbo_8step_v1.0_resized_avg_rank_24_bf16.safetensors`,从 [lightx2v/Minimax-h3-Turbo](https://huggingface.co/lightx2v/Minimax-h3-Turbo) 下载放进 `models/loras`),第二遍挂 ComfyUI 自带的块稀疏注意力(sol-attn)。这几张图都由 `scripts/build_minimax_h3_examples.py` 生成,改它再重新生成,不要手改 JSON。
 - `optional_image_basic_api.json` —— 最小化的 `Optional Image` / `Has Image` /
   `Lazy Image Switch` 演示。
 
