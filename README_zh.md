@@ -94,6 +94,7 @@ Lazy Latent Switch.latent      → KSampler.latent_image
 - `minimax_h3_talk_open.json` / `minimax_h3_talk_continue.json`:任意时长数字人。人物照片做参考,`VRGDG_MiniMaxH3AudioDrive` 用这一段配音驱动口型,续写同样读上一段的潜空间。Mosael 的「任意时长的数字人」把它们串起来。一段 243 帧,模型名按自己机器上的改。
 - `seedvr2_upscale_batched.json`:SeedVR2 7B sharp 超分到 `6.width` × `6.height`(默认 2560×1440),用 VHS 分批(一批 61 帧),内存只占一批。Mosael 的长片和数字人模板配了它,就多一格「成片清晰度」(1080p / 2K / 4K),每段先超分再上时间线。
 - 四张 H3 工作流挂 lightx2v FL2V turbo 8 步 LoRA(`minimax_h3_fl2v_lightx2v_turbo_8step_v1.0_resized_avg_rank_24_bf16.safetensors`,从 [lightx2v/Minimax-h3-Turbo](https://huggingface.co/lightx2v/Minimax-h3-Turbo) 下载放进 `models/loras`),第二遍挂 ComfyUI 自带的块稀疏注意力(sol-attn)。这几张图都由 `scripts/build_minimax_h3_examples.py` 生成,改它再重新生成,不要手改 JSON。
+- 四张 H3 工作流的潜空间存取节点来自 [comfyui-vrgamedevgirl](https://github.com/vrgamegirl19/comfyui-vrgamedevgirl),需要 2026-11 起带 `pass1` 开关的版本(数字人的 `VRGDG_MiniMaxH3AudioDrive` 也在这版的 `minimax/nodes.py` 里,要求 torchaudio 能正常加载)。旧版的控件顺序不同,存下的潜空间会接不上。
 - `optional_image_basic_api.json` —— 最小化的 `Optional Image` / `Has Image` /
   `Lazy Image Switch` 演示。
 

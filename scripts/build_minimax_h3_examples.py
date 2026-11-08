@@ -173,7 +173,9 @@ def two_pass(g: Graph, models: tuple[int, int], positive, latent, audio, guided=
     g.wire(11, 0, 74, "sampler", "SAMPLER")
     g.wire(70, 0, 74, "sigmas", "SIGMAS")
     g.wire(*fine_latent, 74, "latent_image", "LATENT")
-    g.node(52, "VRGDG_MiniMaxH3SaveLatent", ["mosael/latents", 1, 0, 24.0, -1], "存下这一段的潜空间 / Keep this latent",
+    #: 控件依次是 project_folder、scene_number、frame_count、fps、pass1、tail_padding_frames。pass1 必须为 False:
+    #: 为 True 时存成 scene_NNN.pass1.latent(只有第一遍),下一段的 LoadLatent 读的是 scene_NNN.latent,会找不到。
+    g.node(52, "VRGDG_MiniMaxH3SaveLatent", ["mosael/latents", 1, 0, 24.0, False, -1], "存下这一段的潜空间 / Keep this latent",
            [("latent", "LATENT"), ("saved_path", "STRING")])
     g.wire(74, 0, 52, "latent", "LATENT")
     #: 采样完把模型挪出显存、解码完清内存:高清解码有显存用,接着跑的超分(另一个任务)有内存用。画面不变,单段不变慢(实测)。
